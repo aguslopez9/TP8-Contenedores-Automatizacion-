@@ -19,13 +19,19 @@ rm -f frontend.zip
   zip -rq ../frontend.zip .
 )
 
-if [[ -n "${FRONTEND_DEPLOY_ENDPOINT:-}" ]]; then
+sanitize() {
+  printf "%s" "$1" | tr -d '\r\n'
+}
+
+CUSTOM_ENDPOINT=$(sanitize "${FRONTEND_DEPLOY_ENDPOINT:-}")
+
+if [[ -n "$CUSTOM_ENDPOINT" ]]; then
   echo "Desplegando frontend en ${ENVIRONMENT} usando endpoint custom"
   curl -sSf -X POST \
     -H "Authorization: Bearer ${FRONTEND_TOKEN}" \
     -H "Content-Type: application/zip" \
     --data-binary "@frontend.zip" \
-    "${FRONTEND_DEPLOY_ENDPOINT}"
+    "${CUSTOM_ENDPOINT}"
   echo "Frontend desplegado correctamente"
   exit 0
 fi
@@ -35,11 +41,18 @@ if [[ -z "${FRONTEND_SITE_ID:-}" ]]; then
   exit 1
 fi
 
+SITE_ID=$(sanitize "${FRONTEND_SITE_ID}")
+
+if [[ -z "$SITE_ID" ]]; then
+  echo "FRONTEND_SITE_ID quedó vacío después de sanitizar (¿espacios o saltos de línea?)." >&2
+  exit 1
+fi
+
 echo "Desplegando frontend en ${ENVIRONMENT} (Netlify)"
 curl -sSf -H "Authorization: Bearer ${FRONTEND_TOKEN}" \
   -H "Content-Type: application/zip" \
   --data-binary "@frontend.zip" \
-  "https://api.netlify.com/api/v1/sites/${FRONTEND_SITE_ID}/deploys"
+  "https://api.netlify.com/api/v1/sites/${SITE_ID}/deploys"
 
 echo "Frontend desplegado correctamente"
 
