@@ -10,12 +10,12 @@ TP08 exige contenerizar la aplicación, publicar las imágenes en un registry y 
 
 ## Decisión 2 – Integración en el pipeline
 - Agregamos un Dockerfile oficial en `backend/Dockerfile` (multi-stage sobre `node:20-alpine`, instala dependencias con `npm ci --omit=dev` y expone el puerto 3000).
-- El job nuevo `publish_backend_image` dentro de `ci.yml` construye la imagen solo en pushes a `main` y la publica en `ghcr.io/<owner>/tp5-release-backend` con tags `sha` + `latest`.
+- El job nuevo `publish_backend_image` dentro de `ci.yml` construye la imagen solo en pushes a `main` y la publica en `ghcr.io/<owner>/tp8-release-backend` con tags `sha` + `latest`.
 - `deploy.yml` ahora retaguea la imagen aprobada como `qa` y `prod` después de cada health check; esto deja audit trail por commit (`sha`) pero también tags estables por ambiente para cualquier consumidor externo.
 - El mismo pipeline sigue haciendo deploy tradicional a Render/Netlify para no romper el TP5; en paralelo ya tenemos las imágenes listas para mover a un hosting de contenedores gratis (Render, Railway) cuando avancemos el entregable.
 
 ## Decisión 3 – Deploy QA en servicio de contenedores
-- **Servicio**: Render Web Service configurado como “Deploy an existing Docker image” apuntando a `ghcr.io/<owner>/tp5-release-backend:qa`. Razones: tiene free tier, soporta Docker, expone HTTPS público y ya usábamos Render, así que reaprovechamos networking y monitoreo.
+- **Servicio**: Render Web Service configurado como “Deploy an existing Docker image” apuntando a `ghcr.io/<owner>/tp8-release-backend:qa`. Razones: tiene free tier, soporta Docker, expone HTTPS público y ya usábamos Render, así que reaprovechamos networking y monitoreo.
 - **Automatización**: reemplazamos el paso `deploy_backend.sh` en QA por `scripts/deploy_backend_container.sh`, que llama a la API de Render (`/v1/services/<id>/deploys`) con `QA_RENDER_API_KEY` y el tag `qa`. Después corremos el `health_check.sh` sobre la URL pública para validar que el contenedor levantó.
 - **Variables y secretos**: `QA_RENDER_API_KEY` (secret en GitHub Env), `QA_RENDER_SERVICE_ID` y `QA_RENDER_REGION` (vars). La URL resultante se publica como `QA_BACKEND_URL`, lo que además alimenta el frontend Netlify y los health checks.
 - **Recursos**: Render free tier (0.1 vCPU / 512 MB RAM) alcanza para testing; dejamos anotado que se puede subir al plan Starter si la defensa requiere más carga.
@@ -51,7 +51,7 @@ TP08 exige contenerizar la aplicación, publicar las imágenes en un registry y 
 ## Sección 2 – Implementación (qué mostrar en el documento)
 
 ### Container Registry (GHCR)
-- **Evidencia**: screenshot de `https://github.com/<owner>/<repo>/packages` mostrando el paquete `tp5-release-backend` con tags `latest`, `sha-xxxxx`, `qa`, `prod`.
+- **Evidencia**: screenshot de `https://github.com/<owner>/<repo>/packages` mostrando el paquete `tp8-release-backend` con tags `latest`, `sha-xxxxx`, `qa`, `prod`.
 - **Autenticación**: usamos el `GITHUB_TOKEN` provisto por Actions en `docker/login-action`. En una demo manual se puede mostrar `echo $PAT | docker login ghcr.io -u <user> --password-stdin`. Los permisos se heredan del repo; opcionalmente se puede dejar el paquete público para la defensa.
 
 ### Ambiente QA (Render Free + Netlify QA)

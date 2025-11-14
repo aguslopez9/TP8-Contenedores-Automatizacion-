@@ -13,7 +13,7 @@ permissions:
 env:
   FRONTEND_ARTIFACT: frontend-dist
   BACKEND_ARTIFACT: backend-dist
-  BACKEND_IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/tp5-release-backend
+  BACKEND_IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/tp8-release-backend
 
 jobs:
   deploy_qa:

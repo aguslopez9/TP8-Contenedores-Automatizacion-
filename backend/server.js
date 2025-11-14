@@ -3,6 +3,7 @@ const { URL } = require("url");
 const { TodoStore } = require("./storage");
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const HOST = process.env.HOST || "0.0.0.0";
 
 const store = new TodoStore();
 
@@ -168,8 +169,8 @@ const server = http.createServer(async (req, res) => {
 store
   .load()
   .then(() => {
-    server.listen(PORT, () => {
-      console.log(`API escuchando en http://localhost:${PORT}`);
+    server.listen(PORT, HOST, () => {
+      console.log(`API escuchando en http://${HOST}:${PORT}`);
     });
   })
   .catch((error) => {
