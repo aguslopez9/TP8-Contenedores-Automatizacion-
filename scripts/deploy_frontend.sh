@@ -13,24 +13,33 @@ if [[ -z "${FRONTEND_TOKEN:-}" ]]; then
   exit 1
 fi
 
-if [[ -z "${FRONTEND_SITE_ID:-}" ]]; then
-  echo "FRONTEND_SITE_ID no definido"
-  exit 1
-fi
-
-echo "Desplegando frontend en ${ENVIRONMENT}"
-
 rm -f frontend.zip
 (
   cd frontend
   zip -rq ../frontend.zip .
 )
 
-curl -sSf -X POST \
-  -H "Authorization: Bearer ${FRONTEND_TOKEN}" \
+if [[ -n "${FRONTEND_DEPLOY_ENDPOINT:-}" ]]; then
+  echo "Desplegando frontend en ${ENVIRONMENT} usando endpoint custom"
+  curl -sSf -X POST \
+    -H "Authorization: Bearer ${FRONTEND_TOKEN}" \
+    -H "Content-Type: application/zip" \
+    --data-binary "@frontend.zip" \
+    "${FRONTEND_DEPLOY_ENDPOINT}"
+  echo "Frontend desplegado correctamente"
+  exit 0
+fi
+
+if [[ -z "${FRONTEND_SITE_ID:-}" ]]; then
+  echo "FRONTEND_SITE_ID no definido"
+  exit 1
+fi
+
+echo "Desplegando frontend en ${ENVIRONMENT} (Netlify)"
+curl -sSf -H "Authorization: Bearer ${FRONTEND_TOKEN}" \
   -H "Content-Type: application/zip" \
   --data-binary "@frontend.zip" \
-  "${FRONTEND_DEPLOY_ENDPOINT:-https://example.com/frontend/deploy}"
+  "https://api.netlify.com/api/v1/sites/${FRONTEND_SITE_ID}/deploys"
 
 echo "Frontend desplegado correctamente"
 
