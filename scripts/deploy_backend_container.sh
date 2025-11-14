@@ -40,11 +40,11 @@ response=$(curl -sS -o /tmp/render_deploy_response.json -w "%{http_code}" \
   -H "Content-Type: application/json" \
   -d "$payload")
 
-if [[ "$response" != "200" && "$response" != "201" ]]; then
+if [[ "$response" != "200" && "$response" != "201" && "$response" != "202" ]]; then
   echo "Render API devolvió status ${response}. Respuesta completa:" >&2
   cat /tmp/render_deploy_response.json >&2
   exit 1
 fi
 
-echo "Deploy solicitado correctamente:"
+echo "Deploy solicitado correctamente (HTTP ${response}):"
 cat /tmp/render_deploy_response.json
