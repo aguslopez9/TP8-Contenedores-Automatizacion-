@@ -99,7 +99,21 @@ jobs:
           RENDER_REGION: ${{ vars.QA_RENDER_REGION }}
 
       - name: QA health check
-        run: bash scripts/health_check.sh "${{ vars.QA_HEALTHCHECK_URL || format('{0}/health', vars.QA_BACKEND_URL) }}"
+        env:
+          QA_BACKEND_URL: ${{ vars.QA_BACKEND_URL }}
+          QA_HEALTHCHECK_URL: ${{ vars.QA_HEALTHCHECK_URL }}
+        run: |
+          set -euo pipefail
+          URL="${QA_HEALTHCHECK_URL}"
+          if [ -z "$URL" ]; then
+            if [ -z "$QA_BACKEND_URL" ]; then
+              echo "QA_BACKEND_URL no definido: no puedo construir la URL del health check."
+              exit 1
+            fi
+            URL="${QA_BACKEND_URL%/}/health"
+          fi
+          echo "Verificando health check en $URL"
+          bash scripts/health_check.sh "$URL"
 
   deploy_prod:
     name: Deploy Prod
