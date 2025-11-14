@@ -195,5 +195,19 @@ jobs:
           RENDER_REGION: ${{ vars.PROD_RENDER_REGION }}
 
       - name: Prod health check
-        run: bash scripts/health_check.sh "${{ vars.PROD_HEALTHCHECK_URL }}"
+        env:
+          PROD_BACKEND_URL: ${{ vars.PROD_BACKEND_URL }}
+          PROD_HEALTHCHECK_URL: ${{ vars.PROD_HEALTHCHECK_URL }}
+        run: |
+          set -euo pipefail
+          URL="${PROD_HEALTHCHECK_URL}"
+          if [ -z "$URL" ]; then
+            if [ -z "$PROD_BACKEND_URL" ]; then
+              echo "PROD_BACKEND_URL no definido: no puedo construir la URL del health check."
+              exit 1
+            fi
+            URL="${PROD_BACKEND_URL%/}/health"
+          fi
+          echo "Verificando health check en $URL"
+          bash scripts/health_check.sh "$URL"
 
