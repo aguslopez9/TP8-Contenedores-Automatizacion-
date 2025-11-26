@@ -7,7 +7,9 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "lint": "node --check server.js",
-    "test": "npm run lint"
+    "test": "node --test test/**/*.test.js --reporter=spec",
+    "test:watch": "node --test --watch test/**/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage test/**/*.test.js"
   },
   "keywords": [],
   "author": "",

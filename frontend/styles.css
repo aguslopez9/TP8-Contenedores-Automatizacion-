@@ -41,6 +41,32 @@ h1 {
   font-size: 1rem;
 }
 
+.todo-form select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  background: white;
+  color: #222;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23222' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.todo-form select:focus {
+  outline: none;
+  border-color: #007acc;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.todo-form select option {
+  color: #222;
+  background: white;
+}
+
 .todo-form button {
   padding: 0.75rem 1.25rem;
   border: none;
@@ -53,6 +79,94 @@ h1 {
 
 .todo-form button:hover {
   background: #0062a3;
+}
+
+.stats-bar {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: rgba(0, 122, 204, 0.1);
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.stats-bar span {
+  color: #007acc;
+  font-weight: 500;
+}
+
+.controls {
+  margin: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 0.5rem;
+  background: white;
+  color: #666;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background: #f0f0f0;
+}
+
+.filter-btn.active {
+  background: #007acc;
+  color: white;
+  border-color: #007acc;
+}
+
+.search-box {
+  width: 100%;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.bulk-btn {
+  flex: 1;
+  min-width: 150px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 0.75rem;
+  background: #f8f8f8;
+  color: #333;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bulk-btn:hover {
+  background: #e8e8e8;
 }
 
 .todo-list {
@@ -71,6 +185,22 @@ h1 {
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
   background: rgba(0, 0, 0, 0.05);
+  border-left: 4px solid transparent;
+}
+
+.todo-item.priority-high {
+  border-left-color: #d00;
+  background: rgba(221, 0, 0, 0.05);
+}
+
+.todo-item.priority-medium {
+  border-left-color: #ffa500;
+  background: rgba(255, 165, 0, 0.05);
+}
+
+.todo-item.priority-low {
+  border-left-color: #28a745;
+  background: rgba(40, 167, 69, 0.05);
 }
 
 .todo-item input[type="checkbox"] {
@@ -86,6 +216,29 @@ h1 {
 .todo-item.completed label {
   text-decoration: line-through;
   color: #666;
+}
+
+.priority-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.todo-item.priority-high .priority-badge {
+  background: #d00;
+  color: white;
+}
+
+.todo-item.priority-medium .priority-badge {
+  background: #ffa500;
+  color: white;
+}
+
+.todo-item.priority-low .priority-badge {
+  background: #28a745;
+  color: white;
 }
 
 .remove-btn {

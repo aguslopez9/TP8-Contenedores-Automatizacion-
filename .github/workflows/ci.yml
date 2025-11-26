@@ -1,5 +1,13 @@
 name: CI
 
+# Este workflow se ejecuta en:
+# 1. Push a main o TP8: Ejecuta build, tests y publica imagen Docker
+# 2. Pull Request a main: Ejecuta build y tests (sin publicar imagen)
+# 
+# IMPORTANTE: El deploy solo se ejecuta cuando:
+# - Un PR es aprobado y mergeado a main (trigger: push a main)
+# - Todos los tests unitarios pasan exitosamente
+# - El workflow Deploy se ejecuta automáticamente después de CI exitoso
 on:
   push:
     branches:
@@ -14,6 +22,10 @@ jobs:
     name: Build Frontend
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: frontend
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,11 +35,42 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Validate frontend sources
-        working-directory: frontend
-        run: |
+        run: 
           node --check app.js
           node --check config.js
+
+      - name: Run unit tests
+        id: test
+        # IMPORTANTE: continue-on-error: false asegura que si los tests fallan,
+        # el pipeline se detiene inmediatamente y no continúa con el deploy
+        run: npm test 2>&1 | tee test-output.txt
+        continue-on-error: false
+
+      - name: Display test results in summary
+        if: always()
+        run: |
+          echo "## 📊 Frontend Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat test-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          # Extract test count from Jest output
+          TEST_COUNT=$(grep -oP "Tests:\s+\K[0-9]+" test-output.txt | head -1 || echo "0")
+          if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" != "0" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Total Tests**: $TEST_COUNT" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check for failures
+          if grep -qi "failed\|FAIL" test-output.txt; then
+            echo "❌ **Some tests failed**" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -58,8 +101,34 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Run tests
-        run: npm test
+      - name: Run unit tests
+        id: test
+        # IMPORTANTE: continue-on-error: false asegura que si los tests fallan,
+        # el pipeline se detiene inmediatamente y no continúa con el deploy
+        run: npm test 2>&1 | tee test-output.txt
+        continue-on-error: false
+
+      - name: Display test results in summary
+        if: always()
+        run: |
+          echo "## 📊 Backend Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat test-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          # Extract test count
+          TEST_COUNT=$(grep -o "✔" test-output.txt | wc -l | tr -d ' ')
+          if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Total Tests Passed**: $TEST_COUNT" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check for failures
+          if grep -q "✖\|FAIL\|Error" test-output.txt; then
+            echo "❌ **Some tests failed**" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

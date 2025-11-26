@@ -9,6 +9,9 @@
   <body>
     <main class="app">
       <h1>To-Do</h1>
+      
+      <div class="stats-bar" id="stats-bar"></div>
+      
       <form id="todo-form" class="todo-form">
         <label class="sr-only" for="todo-input">Nueva tarea</label>
         <input
@@ -19,8 +22,35 @@
           autocomplete="off"
           required
         />
+        <select id="priority-select" name="priority" title="Prioridad">
+          <option value="low">Baja</option>
+          <option value="medium" selected>Media</option>
+          <option value="high">Alta</option>
+        </select>
         <button type="submit">Agregar</button>
       </form>
+      
+      <div class="controls">
+        <div class="filters">
+          <button class="filter-btn active" data-filter="all">Todos</button>
+          <button class="filter-btn" data-filter="pending">Pendientes</button>
+          <button class="filter-btn" data-filter="completed">Completados</button>
+        </div>
+        <div class="search-box">
+          <input
+            id="search-input"
+            type="text"
+            placeholder="Buscar..."
+            autocomplete="off"
+          />
+        </div>
+      </div>
+      
+      <div class="bulk-actions">
+        <button id="mark-all-completed" class="bulk-btn">Marcar todos completados</button>
+        <button id="delete-completed" class="bulk-btn">Eliminar completados</button>
+      </div>
+      
       <ul id="todo-list" class="todo-list"></ul>
       <p id="empty-state" class="empty-state">No hay tareas todavía.</p>
     </main>

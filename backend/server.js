@@ -86,7 +86,24 @@ const server = http.createServer(async (req, res) => {
 
   if (path === "/todos") {
     if (req.method === "GET") {
-      const todos = await store.list();
+      const completedParam = url.searchParams.get("completed");
+      const priorityParam = url.searchParams.get("priority");
+      const searchParam = url.searchParams.get("search");
+
+      const filters = {};
+      if (completedParam !== null) {
+        filters.completed = completedParam === "true";
+      }
+      if (priorityParam) {
+        filters.priority = priorityParam;
+      }
+      if (searchParam) {
+        filters.search = searchParam;
+      }
+
+      const todos = Object.keys(filters).length > 0
+        ? await store.filter(filters)
+        : await store.list();
       sendJson(res, 200, { todos });
       return;
     }
@@ -108,11 +125,51 @@ const server = http.createServer(async (req, res) => {
       const todo = await store.create({
         text: body.text,
         completed: Boolean(body.completed),
+        priority: body.priority || "medium",
       });
       sendJson(res, 201, { todo });
       return;
     }
 
+    methodNotAllowed(res);
+    return;
+  }
+
+  if (path === "/todos/stats") {
+    if (req.method === "GET") {
+      const stats = await store.getStats();
+      sendJson(res, 200, stats);
+      return;
+    }
+    methodNotAllowed(res);
+    return;
+  }
+
+  if (path === "/todos/bulk/mark-completed") {
+    if (req.method === "POST") {
+      let body;
+      try {
+        body = await parseBody(req);
+      } catch {
+        badRequest(res, "Invalid JSON");
+        return;
+      }
+
+      const completed = body.completed !== undefined ? Boolean(body.completed) : true;
+      const count = await store.markAllCompleted(completed);
+      sendJson(res, 200, { count, completed });
+      return;
+    }
+    methodNotAllowed(res);
+    return;
+  }
+
+  if (path === "/todos/bulk/completed") {
+    if (req.method === "DELETE") {
+      const count = await store.deleteCompleted();
+      sendJson(res, 200, { count });
+      return;
+    }
     methodNotAllowed(res);
     return;
   }
@@ -130,7 +187,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      if (!body || (typeof body.completed === "undefined" && typeof body.text === "undefined")) {
+      if (!body || (typeof body.completed === "undefined" && typeof body.text === "undefined" && typeof body.priority === "undefined")) {
         badRequest(res, "Nothing to update");
         return;
       }
@@ -138,6 +195,7 @@ const server = http.createServer(async (req, res) => {
       const updated = await store.update(todoId, {
         completed: body.completed,
         text: body.text,
+        priority: body.priority,
       });
 
       if (!updated) {
