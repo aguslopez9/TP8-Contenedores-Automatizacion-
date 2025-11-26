@@ -101,12 +101,26 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Start server for tests
+        run: |
+          PORT=3001 npm start &
+          sleep 3
+          echo "Server started in background"
+        continue-on-error: false
+
       - name: Run unit tests
         id: test
         # IMPORTANTE: continue-on-error: false asegura que si los tests fallan,
         # el pipeline se detiene inmediatamente y no continúa con el deploy
-        run: npm test 2>&1 | tee test-output.txt
+        run: |
+          export TEST_PORT=3001
+          npm test 2>&1 | tee test-output.txt
         continue-on-error: false
+
+      - name: Stop server
+        if: always()
+        run: |
+          pkill -f "node server.js" || true
 
       - name: Display test results in summary
         if: always()
