@@ -18,8 +18,10 @@ test.describe('Todo Application E2E Tests', () => {
     await page.selectOption('#priority-select', 'high');
     await page.click('button[type="submit"]');
     
-    await expect(page.locator('.todo-item')).toContainText(todoText);
-    await expect(page.locator('.todo-item.priority-high')).toBeVisible();
+    // Filtrar el elemento específico por texto (Playwright best practice)
+    const newTodo = page.locator('.todo-item').filter({ hasText: todoText });
+    await expect(newTodo).toBeVisible();
+    await expect(newTodo).toHaveClass(/priority-high/);
   });
 
   test('debería crear un todo con prioridad media', async ({ page }) => {
@@ -104,8 +106,9 @@ test.describe('Todo Application E2E Tests', () => {
     
     await page.fill('#search-input', 'búsqueda');
     
-    const filteredTodos = page.locator('.todo-item');
-    await expect(filteredTodos).toContainText('Tarea de búsqueda');
+    // Filtrar el elemento específico por texto
+    const filteredTodo = page.locator('.todo-item').filter({ hasText: 'Tarea de búsqueda' });
+    await expect(filteredTodo).toBeVisible();
   });
 
   test('debería mostrar estadísticas correctamente', async ({ page }) => {
