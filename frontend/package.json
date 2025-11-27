@@ -21,7 +21,12 @@
     "moduleNameMapper": {
       "^(\\.{1,2}/.*)\\.js$": "$1"
     },
-    "transform": {}
+    "transform": {},
+    "coverageReporters": ["text", "lcov", "html"],
+    "collectCoverageFrom": [
+      "app.js",
+      "config.js"
+    ]
   }
 }
 

@@ -5,6 +5,8 @@ Aplicación To-Do completa con frontend, backend y base de datos, con pipeline C
 ## 📋 Documentación
 
 - **[TEST_CASES.md](./TEST_CASES.md)**: Documentación completa de todos los test cases (unitarios e integración)
+- **[E2E_TESTS.md](./E2E_TESTS.md)**: Guía de tests end-to-end con Playwright
+- **[SONARQUBE.md](./SONARQUBE.md)**: Configuración de SonarQube/SonarCloud para análisis de código
 - **[.github/workflows/README.md](./.github/workflows/README.md)**: Documentación del flujo CI/CD y GitHub Actions
 
 ## 🚀 Características
@@ -14,6 +16,8 @@ Aplicación To-Do completa con frontend, backend y base de datos, con pipeline C
 - ✅ Base de datos (JSON file-based)
 - ✅ Tests unitarios (50+ tests)
 - ✅ Tests de integración (7 tests)
+- ✅ Tests end-to-end con Playwright (13 tests)
+- ✅ Análisis de código con SonarQube/SonarCloud
 - ✅ CI/CD automatizado con GitHub Actions
 - ✅ Deploy automático a QA
 - ✅ Aprobación manual para PROD
@@ -35,17 +39,26 @@ cd frontend
 npm test
 ```
 
+**E2E (Playwright):**
+```bash
+# Desde la raíz del proyecto
+npm run test:e2e
+```
+
 ### En CI/CD
 
 Los tests se ejecutan automáticamente:
 - **Tests unitarios**: En cada PR y push a main
+- **Tests E2E (Playwright)**: En cada PR y push a main
 - **Tests de integración**: Después del deploy a QA
+- **Análisis SonarQube**: En cada Pull Request
 
 Ver [TEST_CASES.md](./TEST_CASES.md) para la lista completa de tests.
+Ver [E2E_TESTS.md](./E2E_TESTS.md) para los tests end-to-end.
 
 ## 🔄 Flujo CI/CD
 
-1. **PR abierto** → CI ejecuta tests
+1. **PR abierto** → CI ejecuta tests unitarios + E2E + SonarQube
 2. **PR mergeado** → CI ejecuta build + tests + Docker
 3. **CI exitoso** → Deploy automático a QA
 4. **Tests de integración** → Validación en QA
@@ -56,12 +69,23 @@ Ver [.github/workflows/README.md](./.github/workflows/README.md) para detalles c
 ## 📊 Reportes de Tests
 
 Los reportes de tests están disponibles en:
-- GitHub Actions → Pestaña "Summary" (Step Summary)
-- Logs del workflow en la pestaña "Actions"
-- Status checks en Pull Requests
+- **Tests unitarios**: GitHub Actions → Pestaña "Summary" (Step Summary)
+- **Tests E2E**: Reporte HTML disponible en artifacts (playwright-report)
+- **Análisis de código**: SonarCloud dashboard y comentarios en PRs
+- **Logs**: Disponibles en la pestaña "Actions" de GitHub
+- **Status checks**: Visibles en Pull Requests
 
 ## ✅ Validación de Fallos
 
 - **Tests unitarios fallan** → Pipeline se detiene, no se ejecuta deploy
+- **Tests E2E fallan** → Pipeline se detiene, no se ejecuta deploy
 - **Tests de integración fallan** → Pipeline se detiene, no se ejecuta deploy a PROD
 - **Configuración**: `continue-on-error: false` en todos los jobs de tests
+
+## 📚 Documentación Adicional
+
+- **[TEST_CASES.md](./TEST_CASES.md)**: Lista completa de todos los test cases
+- **[E2E_TESTS.md](./E2E_TESTS.md)**: Guía de tests end-to-end con Playwright
+- **[SONARQUBE.md](./SONARQUBE.md)**: Configuración de SonarQube/SonarCloud
+- **[SETUP.md](./SETUP.md)**: Guía de configuración inicial
+- **[RESUMEN_IMPLEMENTACION.md](./RESUMEN_IMPLEMENTACION.md)**: Resumen ejecutivo completo

@@ -194,3 +194,121 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+  test_e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [build_frontend, build_backend]
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Python (for frontend server)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          TEST_PORT: 3001
+        run: npm run test:e2e
+        continue-on-error: false
+
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload E2E test results XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: test-results/e2e-results.xml
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Display E2E test results
+        if: always()
+        run: |
+          echo "## 🎭 E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f test-results/e2e-results.xml ]; then
+            echo "✅ E2E tests completed" >> $GITHUB_STEP_SUMMARY
+            echo "View detailed report in artifacts: playwright-report" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ E2E test results not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  sonarqube:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+    needs: [build_frontend, build_backend]
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Generate frontend coverage
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Prepare coverage directory
+        run: |
+          mkdir -p coverage
+          # Usar el reporte de frontend como base (backend usa test runner nativo sin LCOV directo)
+          if [ -f frontend/coverage/lcov.info ]; then
+            cp frontend/coverage/lcov.info coverage/lcov.info
+            echo "✅ Coverage report generated"
+          else
+            echo "⚠️ Coverage report not found, creating empty one"
+            echo "TN:" > coverage/lcov.info
+          fi
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: .
