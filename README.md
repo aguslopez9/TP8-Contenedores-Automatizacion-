@@ -64,4 +64,4 @@ Los reportes de tests están disponibles en:
 
 - **Tests unitarios fallan** → Pipeline se detiene, no se ejecuta deploy
 - **Tests de integración fallan** → Pipeline se detiene, no se ejecuta deploy a PROD
-- **Configuración**: `continue-on-error: false` en todos los jobs de tests
+- **Configuración**: `continue-on-error: false` en todos los jobs de tests.
