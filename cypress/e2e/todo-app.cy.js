@@ -93,14 +93,26 @@ describe('Todo Application E2E Tests', () => {
   });
 
   it('debería marcar todos como completados', () => {
-    cy.get('#todo-input').type('Tarea 1');
-    cy.get('button[type="submit"]').click();
+    const todo1Text = 'Tarea 1 E2E';
+    const todo2Text = 'Tarea 2 E2E';
     
-    cy.get('#todo-input').type('Tarea 2');
+    cy.get('#todo-input').type(todo1Text);
     cy.get('button[type="submit"]').click();
+    cy.contains('.todo-item', todo1Text).should('be.visible');
     
+    cy.get('#todo-input').type(todo2Text);
+    cy.get('button[type="submit"]').click();
+    cy.contains('.todo-item', todo2Text).should('be.visible');
+    
+    // Hacer click en marcar todos completados
     cy.get('#mark-all-completed').click();
     
+    // Esperar a que todos los todos se marquen como completados
+    // Verificamos que los todos específicos que creamos estén completados
+    cy.contains('.todo-item', todo1Text).should('have.class', 'completed');
+    cy.contains('.todo-item', todo2Text).should('have.class', 'completed');
+    
+    // Verificar que todos los checkboxes estén marcados
     cy.get('.todo-item input[type="checkbox"]').each(($checkbox) => {
       cy.wrap($checkbox).should('be.checked');
     });
