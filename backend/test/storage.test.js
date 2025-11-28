@@ -31,6 +31,8 @@ describe("TodoStore", () => {
   test("should create a todo with default values", async () => {
     const todo = await store.create({ text: "Test todo" });
     assert.strictEqual(todo.text, "Test todo");
+    // assert.strictEqual(todo.text, "Test todo FAIL");
+
     assert.strictEqual(todo.completed, false);
     assert.strictEqual(todo.priority, "medium");
     assert.ok(todo.createdAt);
