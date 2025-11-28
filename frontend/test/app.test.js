@@ -15,7 +15,12 @@ global.window = {
 };
 
 // Import app.js to enable coverage tracking
-// This ensures Jest can track coverage for all functions in app.js
+// IMPORTANTE: app.js se ejecuta al importarlo, pero Jest necesita importarlo
+// para poder rastrear la cobertura. El código se ejecutará, pero los tests
+// mockean fetch y configuran el DOM antes, así que no debería interferir.
+// 
+// Nota: Esto puede causar que algunas funciones se ejecuten durante el import,
+// pero Jest necesita esto para rastrear la cobertura.
 import "../app.js";
 
 describe("Frontend App Functions", () => {

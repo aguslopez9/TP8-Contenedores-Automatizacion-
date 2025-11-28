@@ -325,16 +325,27 @@ jobs:
         working-directory: backend
         run: |
           # Start server with c8 coverage tracking
+          # IMPORTANTE: c8 necesita que el proceso termine normalmente para generar el reporte
           PORT=3001 c8 --reporter=lcov --reporter=text --reporter=html --include='server.js' --include='storage.js' node server.js &
           SERVER_PID=$!
           sleep 5
           export TEST_PORT=3001
           # Run tests (they will hit the server and trigger code execution)
           node --test test/*.test.js || echo "Tests completed"
-          # Stop server
-          kill $SERVER_PID 2>/dev/null || pkill -f "node server.js" || true
+          # Stop server gracefully to allow c8 to write coverage report
+          # Enviar SIGTERM primero para que c8 pueda escribir el reporte
+          kill -TERM $SERVER_PID 2>/dev/null || true
+          sleep 3
+          # Si aún está corriendo, forzar terminación
+          kill -9 $SERVER_PID 2>/dev/null || pkill -f "node server.js" || true
           sleep 2
-          echo "✅ Backend coverage generated"
+          # Verificar que el reporte se generó
+          if [ -f coverage/lcov.info ]; then
+            echo "✅ Backend coverage report generated"
+            echo "📊 Coverage file size: $(wc -l < coverage/lcov.info) lines"
+          else
+            echo "⚠️ Warning: Coverage report not found, but continuing..."
+          fi
 
       - name: Generate frontend coverage
         working-directory: frontend

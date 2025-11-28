@@ -65,10 +65,20 @@ El workflow de deploy ahora verifica el Quality Gate antes de desplegar.
 
 ## ✅ Verificación Automática
 
-El workflow verifica automáticamente:
-- ✅ Cobertura >= 70%
-- ✅ Sin issues críticos nuevos
-- ✅ Sin issues blocker nuevos
+El workflow verifica automáticamente de dos formas:
+
+### 1. Verificación Directa (API de SonarCloud)
+El workflow consulta directamente las métricas de SonarCloud:
+- ✅ **Cobertura total >= 70%** (verificación directa, no depende del Quality Gate)
+- ✅ **Issues críticos = 0**
+- ✅ **Issues blocker = 0**
+
+### 2. Quality Gate de SonarCloud
+Además, verifica el estado del Quality Gate configurado en SonarCloud como respaldo.
+
+**Importante**: El workflow bloquea el deploy si la cobertura es < 70%, **incluso si el Quality Gate en SonarCloud está configurado incorrectamente o no está configurado**. Esto asegura que siempre se cumpla el requisito mínimo de cobertura.
+
+### 3. Tests de Integración
 - ✅ Tests de integración pasan (ya configurado)
 
 ## 📊 Ver Estado del Quality Gate
@@ -107,7 +117,8 @@ Si el Quality Gate falla:
 
 ## 📝 Notas
 
-- El Quality Gate se evalúa sobre **"New Code"** (código nuevo desde la última versión)
-- Los issues existentes no bloquean (solo los nuevos)
-- La cobertura se mide sobre todo el código, no solo el nuevo
+- **Cobertura**: El workflow verifica la **cobertura total** (no solo "New Code"), asegurando que siempre sea >= 70%
+- **Issues**: Verifica issues críticos y blocker totales (no solo nuevos)
+- **Doble verificación**: El workflow verifica tanto las métricas directamente como el Quality Gate de SonarCloud
+- **Bloqueo garantizado**: Si la cobertura < 70%, el deploy se bloquea independientemente de la configuración del Quality Gate en SonarCloud
 
