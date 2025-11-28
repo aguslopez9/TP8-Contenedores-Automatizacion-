@@ -418,11 +418,11 @@ jobs:
 
       - name: Merge coverage reports
         run: |
-          echo "🔍 Combinando reportes de cobertura..."
+          echo "🔍 Combinando reportes de cobertura (siguiendo guía de referencia)..."
           mkdir -p coverage
           
-          # Crear archivo LCOV combinado
-          echo "TN:" > coverage/lcov.info
+          # Según la guía, los reportes LCOV deben estar en coverage/lcov.info
+          # Combinamos los reportes del backend y frontend
           
           BACKEND_COVERAGE_EXISTS=false
           FRONTEND_COVERAGE_EXISTS=false
@@ -430,12 +430,20 @@ jobs:
           # Agregar cobertura del backend si existe
           if [ -f backend/coverage/lcov.info ]; then
             BACKEND_LINES=$(wc -l < backend/coverage/lcov.info)
-            if [ "$BACKEND_LINES" -gt 10 ]; then
-              echo "📊 Adding backend coverage (${BACKEND_LINES} lines)..."
-              cat backend/coverage/lcov.info >> coverage/lcov.info
+            BACKEND_SOURCE_FILES=$(grep -c "^SF:" backend/coverage/lcov.info || echo "0")
+            
+            if [ "$BACKEND_LINES" -gt 10 ] && [ "$BACKEND_SOURCE_FILES" -gt 0 ]; then
+              echo "📊 Adding backend coverage (${BACKEND_LINES} lines, ${BACKEND_SOURCE_FILES} source files)..."
+              # Si el archivo final no existe, copiar el del backend
+              if [ ! -f coverage/lcov.info ]; then
+                cp backend/coverage/lcov.info coverage/lcov.info
+              else
+                # Combinar: agregar el contenido del backend (sin el header TN: si ya existe)
+                grep -v "^TN:" backend/coverage/lcov.info >> coverage/lcov.info || cat backend/coverage/lcov.info >> coverage/lcov.info
+              fi
               BACKEND_COVERAGE_EXISTS=true
             else
-              echo "⚠️ Backend coverage file exists but seems too small (${BACKEND_LINES} lines)"
+              echo "⚠️ Backend coverage file exists but seems invalid (${BACKEND_LINES} lines, ${BACKEND_SOURCE_FILES} source files)"
             fi
           else
             echo "⚠️ Backend coverage file not found at backend/coverage/lcov.info"
@@ -444,67 +452,111 @@ jobs:
           # Agregar cobertura del frontend si existe
           if [ -f frontend/coverage/lcov.info ]; then
             FRONTEND_LINES=$(wc -l < frontend/coverage/lcov.info)
-            if [ "$FRONTEND_LINES" -gt 10 ]; then
-              echo "📊 Adding frontend coverage (${FRONTEND_LINES} lines)..."
-              cat frontend/coverage/lcov.info >> coverage/lcov.info
+            FRONTEND_SOURCE_FILES=$(grep -c "^SF:" frontend/coverage/lcov.info || echo "0")
+            
+            if [ "$FRONTEND_LINES" -gt 10 ] && [ "$FRONTEND_SOURCE_FILES" -gt 0 ]; then
+              echo "📊 Adding frontend coverage (${FRONTEND_LINES} lines, ${FRONTEND_SOURCE_FILES} source files)..."
+              # Combinar: agregar el contenido del frontend (sin el header TN: si ya existe)
+              if [ ! -f coverage/lcov.info ]; then
+                cp frontend/coverage/lcov.info coverage/lcov.info
+              else
+                grep -v "^TN:" frontend/coverage/lcov.info >> coverage/lcov.info || cat frontend/coverage/lcov.info >> coverage/lcov.info
+              fi
               FRONTEND_COVERAGE_EXISTS=true
             else
-              echo "⚠️ Frontend coverage file exists but seems too small (${FRONTEND_LINES} lines)"
+              echo "⚠️ Frontend coverage file exists but seems invalid (${FRONTEND_LINES} lines, ${FRONTEND_SOURCE_FILES} source files)"
             fi
           else
             echo "⚠️ Frontend coverage file not found at frontend/coverage/lcov.info"
           fi
           
-          # Verificar que el archivo no esté vacío
-          FINAL_LINES=$(wc -l < coverage/lcov.info)
-          if [ "$FINAL_LINES" -gt 10 ]; then
-            echo "✅ Coverage report merged successfully (${FINAL_LINES} lines)"
-            echo "📈 Coverage summary:"
-            echo "  - Backend: $([ "$BACKEND_COVERAGE_EXISTS" = true ] && echo "✅ Included" || echo "❌ Missing")"
-            echo "  - Frontend: $([ "$FRONTEND_COVERAGE_EXISTS" = true ] && echo "✅ Included" || echo "❌ Missing")"
-            echo ""
-            echo "📋 Sample coverage data:"
-            grep -E "^SF:|^LF:|^LH:" coverage/lcov.info | head -20 || echo "No coverage data found in expected format"
-          else
-            echo "❌ ERROR: Coverage report is empty or too small (${FINAL_LINES} lines)"
-            echo "📁 Checking for coverage files:"
-            find . -name "lcov.info" -type f 2>/dev/null | head -10 || echo "No lcov.info files found"
-            echo ""
-            echo "⚠️ This will result in very low coverage in SonarCloud"
-            echo "⚠️ Creating minimal report to avoid complete failure..."
-            echo "TN:" > coverage/lcov.info
-            echo "SF:backend/server.js" >> coverage/lcov.info
-            echo "SF:frontend/app.js" >> coverage/lcov.info
-          fi
-
-      - name: Verify coverage report before SonarCloud scan
-        run: |
-          echo "🔍 Verificando reporte de cobertura antes de enviar a SonarCloud..."
+          # Verificar que el archivo final tenga contenido válido
           if [ -f coverage/lcov.info ]; then
-            LINES=$(wc -l < coverage/lcov.info)
-            SIZE=$(du -h coverage/lcov.info | cut -f1)
-            echo "✅ Reporte encontrado: ${LINES} líneas, ${SIZE}"
+            FINAL_LINES=$(wc -l < coverage/lcov.info)
+            FINAL_SOURCE_FILES=$(grep -c "^SF:" coverage/lcov.info || echo "0")
             
-            # Contar archivos fuente en el reporte
-            SOURCE_FILES=$(grep -c "^SF:" coverage/lcov.info || echo "0")
-            echo "📊 Archivos fuente en el reporte: ${SOURCE_FILES}"
-            
-            if [ "$SOURCE_FILES" -eq 0 ]; then
-              echo "⚠️ WARNING: No se encontraron archivos fuente en el reporte LCOV"
-              echo "📋 Primeras 30 líneas del reporte:"
-              head -30 coverage/lcov.info
+            if [ "$FINAL_LINES" -gt 10 ] && [ "$FINAL_SOURCE_FILES" -gt 0 ]; then
+              echo "✅ Coverage report merged successfully"
+              echo "📈 Coverage summary:"
+              echo "  - Total lines: ${FINAL_LINES}"
+              echo "  - Source files: ${FINAL_SOURCE_FILES}"
+              echo "  - Backend: $([ "$BACKEND_COVERAGE_EXISTS" = true ] && echo "✅ Included" || echo "❌ Missing")"
+              echo "  - Frontend: $([ "$FRONTEND_COVERAGE_EXISTS" = true ] && echo "✅ Included" || echo "❌ Missing")"
+              echo ""
+              echo "📋 Sample coverage data (first 5 source files):"
+              grep "^SF:" coverage/lcov.info | head -5 || echo "No source files found"
+              echo ""
+              echo "📊 Coverage statistics:"
+              grep -E "^LF:|^LH:" coverage/lcov.info | head -10 || echo "No coverage statistics found"
             else
-              echo "✅ Reporte parece válido con ${SOURCE_FILES} archivos fuente"
+              echo "❌ ERROR: Coverage report is invalid (${FINAL_LINES} lines, ${FINAL_SOURCE_FILES} source files)"
+              echo "📁 Checking for coverage files:"
+              find . -name "lcov.info" -type f -exec sh -c 'echo "  - {} ($(wc -l < {} | tr -d " ") lines, $(grep -c "^SF:" {} || echo 0) source files)"' \; 2>/dev/null || echo "No lcov.info files found"
+              exit 1
             fi
           else
-            echo "❌ ERROR: Reporte de cobertura no encontrado en coverage/lcov.info"
+            echo "❌ ERROR: No coverage report was created"
+            echo "📁 Checking for coverage files:"
+            find . -name "lcov.info" -type f 2>/dev/null | head -10 || echo "No lcov.info files found"
             exit 1
           fi
 
+      - name: Publish coverage results (siguiendo guía de referencia)
+        # Similar a PublishCodeCoverageResults@2 en Azure DevOps
+        # En GitHub Actions, publicamos el reporte como artifact y verificamos que esté correcto
+        run: |
+          echo "📤 Publicando resultados de code coverage (siguiendo guía)..."
+          if [ -f coverage/lcov.info ]; then
+            LINES=$(wc -l < coverage/lcov.info)
+            SIZE=$(du -h coverage/lcov.info | cut -f1)
+            SOURCE_FILES=$(grep -c "^SF:" coverage/lcov.info || echo "0")
+            
+            echo "✅ Reporte de cobertura listo para SonarCloud:"
+            echo "  - Ubicación: coverage/lcov.info"
+            echo "  - Tamaño: ${SIZE} (${LINES} líneas)"
+            echo "  - Archivos fuente: ${SOURCE_FILES}"
+            
+            if [ "$SOURCE_FILES" -eq 0 ]; then
+              echo "❌ ERROR: No se encontraron archivos fuente en el reporte LCOV"
+              echo "📋 Primeras 50 líneas del reporte:"
+              head -50 coverage/lcov.info
+              echo ""
+              echo "❌ El reporte no es válido. SonarCloud no podrá leer la cobertura."
+              exit 1
+            else
+              echo "✅ Reporte válido con ${SOURCE_FILES} archivos fuente"
+              echo "📋 Lista de archivos fuente en el reporte:"
+              grep "^SF:" coverage/lcov.info | head -10
+              echo ""
+              echo "✅ El reporte está listo para ser analizado por SonarCloud"
+            fi
+          else
+            echo "❌ ERROR: Reporte de cobertura no encontrado en coverage/lcov.info"
+            echo "📁 Buscando archivos lcov.info en el proyecto:"
+            find . -name "lcov.info" -type f 2>/dev/null || echo "No se encontraron archivos lcov.info"
+            exit 1
+          fi
+          
+          # Publicar como artifact para referencia
+          echo "📦 Publicando reporte como artifact..."
+          mkdir -p coverage-artifact
+          cp coverage/lcov.info coverage-artifact/ || exit 1
+
+      - name: Upload coverage report as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/lcov.info
+          retention-days: 7
+
       - name: SonarCloud Scan
+        # Según la guía, SonarCloud debe leer el reporte de coverage/lcov.info
+        # que está configurado en sonar-project.properties
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectBaseDir: .
+          # SonarCloud leerá automáticamente coverage/lcov.info según sonar-project.properties
