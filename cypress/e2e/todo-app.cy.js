@@ -44,20 +44,27 @@ describe('Todo Application E2E Tests', () => {
   });
 
   it('debería filtrar todos por estado completado', () => {
+    const completedTodoText = 'Tarea completada E2E';
+    const pendingTodoText = 'Tarea pendiente E2E';
+    
     // Crear y completar un todo
-    cy.get('#todo-input').type('Tarea completada');
+    cy.get('#todo-input').type(completedTodoText);
     cy.get('button[type="submit"]').click();
-    cy.get('.todo-item input[type="checkbox"]').first().check();
+    
+    // Buscar el todo específico que acabamos de crear y marcarlo como completado
+    cy.contains('.todo-item', completedTodoText).within(() => {
+      cy.get('input[type="checkbox"]').check();
+    });
     
     // Crear un todo pendiente
-    cy.get('#todo-input').type('Tarea pendiente');
+    cy.get('#todo-input').type(pendingTodoText);
     cy.get('button[type="submit"]').click();
     
     // Filtrar por completados
     cy.get('button[data-filter="completed"]').click();
     
-    cy.get('.todo-item.completed').first().should('be.visible');
-    cy.get('.todo-item.completed').first().should('contain.text', 'Tarea completada');
+    // Verificar que el todo completado está visible
+    cy.contains('.todo-item.completed', completedTodoText).should('be.visible');
   });
 
   it('debería buscar todos por texto', () => {

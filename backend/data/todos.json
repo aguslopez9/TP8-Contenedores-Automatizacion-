@@ -1,38 +1,6 @@
 {
   "todos": [
     {
-      "id": 67,
-      "text": "Pending",
-      "completed": true,
-      "priority": "medium",
-      "createdAt": "2025-11-26T02:27:37.775Z",
-      "completedAt": "2025-11-26T02:54:32.898Z"
-    },
-    {
-      "id": 68,
-      "text": "Test",
-      "completed": true,
-      "priority": "medium",
-      "createdAt": "2025-11-26T02:27:37.778Z",
-      "completedAt": "2025-11-26T02:54:32.898Z"
-    },
-    {
-      "id": 69,
-      "text": "Test",
-      "completed": true,
-      "priority": "medium",
-      "createdAt": "2025-11-26T02:27:37.779Z",
-      "completedAt": "2025-11-26T02:54:32.898Z"
-    },
-    {
-      "id": 70,
-      "text": "New task",
-      "completed": true,
-      "priority": "medium",
-      "createdAt": "2025-11-26T02:54:32.887Z",
-      "completedAt": "2025-11-26T02:54:32.898Z"
-    },
-    {
       "id": 71,
       "text": "High priority",
       "completed": true,
@@ -347,10 +315,362 @@
     {
       "id": 111,
       "text": "Tarea completada",
-      "completed": false,
+      "completed": true,
       "priority": "medium",
       "createdAt": "2025-11-28T00:01:45.673Z",
-      "completedAt": null
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 112,
+      "text": "Nueva tarea E2E",
+      "completed": true,
+      "priority": "high",
+      "createdAt": "2025-11-28T02:04:20.709Z",
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 113,
+      "text": "Tarea para completar",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:04:21.206Z",
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 114,
+      "text": "Tarea para eliminar",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:04:21.706Z",
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 115,
+      "text": "Tarea completada",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:04:22.254Z",
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 116,
+      "text": "Tarea pendiente",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:04:22.570Z",
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 117,
+      "text": "Tarea de búsqueda",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:04:33.307Z",
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 118,
+      "text": "Otra tarea diferente",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:04:33.670Z",
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 119,
+      "text": "Tarea 1",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:04:34.239Z",
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 120,
+      "text": "Tarea 2",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:04:34.453Z",
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 121,
+      "text": "Tarea 1",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:04:34.792Z",
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 122,
+      "text": "Tarea 2",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:04:35.007Z",
+      "completedAt": "2025-11-28T02:04:35.083Z"
+    },
+    {
+      "id": 123,
+      "text": "Nueva tarea E2E",
+      "completed": true,
+      "priority": "high",
+      "createdAt": "2025-11-28T02:05:14.953Z",
+      "completedAt": "2025-11-28T02:05:19.393Z"
+    },
+    {
+      "id": 124,
+      "text": "Tarea para completar",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:05:15.459Z",
+      "completedAt": "2025-11-28T02:05:19.393Z"
+    },
+    {
+      "id": 125,
+      "text": "Tarea para eliminar",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:05:15.970Z",
+      "completedAt": "2025-11-28T02:05:19.393Z"
+    },
+    {
+      "id": 126,
+      "text": "Tarea completada E2E",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:05:16.555Z",
+      "completedAt": "2025-11-28T02:05:16.639Z"
+    },
+    {
+      "id": 127,
+      "text": "Tarea pendiente E2E",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:05:17.068Z",
+      "completedAt": "2025-11-28T02:05:19.393Z"
+    },
+    {
+      "id": 128,
+      "text": "Tarea de búsqueda",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:05:17.619Z",
+      "completedAt": "2025-11-28T02:05:19.393Z"
+    },
+    {
+      "id": 129,
+      "text": "Otra tarea diferente",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:05:17.988Z",
+      "completedAt": "2025-11-28T02:05:19.393Z"
+    },
+    {
+      "id": 130,
+      "text": "Tarea 1",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:05:18.551Z",
+      "completedAt": "2025-11-28T02:05:19.393Z"
+    },
+    {
+      "id": 131,
+      "text": "Tarea 2",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:05:18.762Z",
+      "completedAt": "2025-11-28T02:05:19.393Z"
+    },
+    {
+      "id": 132,
+      "text": "Tarea 1",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:05:19.103Z",
+      "completedAt": "2025-11-28T02:05:19.393Z"
+    },
+    {
+      "id": 133,
+      "text": "Tarea 2",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:05:19.319Z",
+      "completedAt": "2025-11-28T02:05:19.393Z"
+    },
+    {
+      "id": 134,
+      "text": "Nueva tarea E2E",
+      "completed": true,
+      "priority": "high",
+      "createdAt": "2025-11-28T02:07:06.021Z",
+      "completedAt": "2025-11-28T02:07:10.242Z"
+    },
+    {
+      "id": 135,
+      "text": "Tarea para completar",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:06.500Z",
+      "completedAt": "2025-11-28T02:07:10.242Z"
+    },
+    {
+      "id": 136,
+      "text": "Tarea para eliminar",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:06.995Z",
+      "completedAt": "2025-11-28T02:07:10.242Z"
+    },
+    {
+      "id": 137,
+      "text": "Tarea completada E2E",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:07.565Z",
+      "completedAt": "2025-11-28T02:07:10.242Z"
+    },
+    {
+      "id": 138,
+      "text": "Tarea pendiente E2E",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:07.920Z",
+      "completedAt": "2025-11-28T02:07:10.242Z"
+    },
+    {
+      "id": 139,
+      "text": "Tarea de búsqueda",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:08.452Z",
+      "completedAt": "2025-11-28T02:07:10.242Z"
+    },
+    {
+      "id": 140,
+      "text": "Otra tarea diferente",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:08.819Z",
+      "completedAt": "2025-11-28T02:07:10.242Z"
+    },
+    {
+      "id": 141,
+      "text": "Tarea 1",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:09.397Z",
+      "completedAt": "2025-11-28T02:07:10.242Z"
+    },
+    {
+      "id": 142,
+      "text": "Tarea 2",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:09.613Z",
+      "completedAt": "2025-11-28T02:07:10.242Z"
+    },
+    {
+      "id": 143,
+      "text": "Tarea 1",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:09.952Z",
+      "completedAt": "2025-11-28T02:07:10.242Z"
+    },
+    {
+      "id": 144,
+      "text": "Tarea 2",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:10.165Z",
+      "completedAt": "2025-11-28T02:07:10.242Z"
+    },
+    {
+      "id": 145,
+      "text": "Nueva tarea E2E",
+      "completed": true,
+      "priority": "high",
+      "createdAt": "2025-11-28T02:07:19.604Z",
+      "completedAt": "2025-11-28T02:07:23.794Z"
+    },
+    {
+      "id": 146,
+      "text": "Tarea para completar",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:20.088Z",
+      "completedAt": "2025-11-28T02:07:23.794Z"
+    },
+    {
+      "id": 147,
+      "text": "Tarea para eliminar",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:20.576Z",
+      "completedAt": "2025-11-28T02:07:23.794Z"
+    },
+    {
+      "id": 148,
+      "text": "Tarea completada E2E",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:21.150Z",
+      "completedAt": "2025-11-28T02:07:23.794Z"
+    },
+    {
+      "id": 149,
+      "text": "Tarea pendiente E2E",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:21.500Z",
+      "completedAt": "2025-11-28T02:07:23.794Z"
+    },
+    {
+      "id": 150,
+      "text": "Tarea de búsqueda",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:22.036Z",
+      "completedAt": "2025-11-28T02:07:23.794Z"
+    },
+    {
+      "id": 151,
+      "text": "Otra tarea diferente",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:22.395Z",
+      "completedAt": "2025-11-28T02:07:23.794Z"
+    },
+    {
+      "id": 152,
+      "text": "Tarea 1",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:22.957Z",
+      "completedAt": "2025-11-28T02:07:23.794Z"
+    },
+    {
+      "id": 153,
+      "text": "Tarea 2",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:23.163Z",
+      "completedAt": "2025-11-28T02:07:23.794Z"
+    },
+    {
+      "id": 154,
+      "text": "Tarea 1",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:23.511Z",
+      "completedAt": "2025-11-28T02:07:23.794Z"
+    },
+    {
+      "id": 155,
+      "text": "Tarea 2",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T02:07:23.721Z",
+      "completedAt": "2025-11-28T02:07:23.794Z"
     }
   ]
 }

@@ -119,6 +119,8 @@ sonar.javascript.lcov.reportPaths=coverage/lcov.info
 1. Verifica que los tests generen reportes LCOV
 2. Verifica que el path en `sonar.javascript.lcov.reportPaths` sea correcto
 3. Revisa los logs del workflow
+4. Verifica que `c8` esté instalado para generar cobertura del backend
+5. Verifica que el archivo `coverage/lcov.info` se genere correctamente en el workflow
 
 ## Mejores Prácticas
 
