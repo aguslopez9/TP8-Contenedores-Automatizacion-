@@ -1,10 +1,10 @@
-# Tests End-to-End (E2E) con Playwright
+# Tests End-to-End (E2E) con Cypress
 
-Este documento describe los tests end-to-end implementados con Playwright.
+Este documento describe los tests end-to-end implementados con Cypress.
 
 ## Configuración
 
-Playwright está configurado en `playwright.config.js` y los tests están en `tests/e2e/`.
+Cypress está configurado en `cypress.config.js` y los tests están en `cypress/e2e/`.
 
 ### Instalación
 
@@ -12,8 +12,8 @@ Playwright está configurado en `playwright.config.js` y los tests están en `te
 # Instalar dependencias
 npm install
 
-# Instalar navegadores de Playwright
-npx playwright install
+# Abrir Cypress Test Runner (interfaz gráfica)
+npm run test:e2e:open
 ```
 
 ## Ejecutar Tests E2E
@@ -21,22 +21,21 @@ npx playwright install
 ### Localmente
 
 ```bash
-# Ejecutar todos los tests E2E
+# Ejecutar todos los tests E2E (headless)
 npm run test:e2e
 
-# Ejecutar con UI interactiva
-npm run test:e2e:ui
+# Abrir Cypress Test Runner (interfaz gráfica)
+npm run test:e2e:open
 
 # Ejecutar en modo headed (ver el navegador)
 npm run test:e2e:headed
-
-# Ver reporte HTML
-npm run test:e2e:report
 ```
 
 ### En CI/CD
 
 Los tests E2E se ejecutan automáticamente en GitHub Actions después de los tests unitarios.
+
+**Nota**: En CI, los servidores (backend y frontend) se inician automáticamente antes de ejecutar los tests.
 
 ## Tests Implementados
 
@@ -80,25 +79,49 @@ Los tests E2E se ejecutan automáticamente en GitHub Actions después de los tes
 ## Configuración de Ambientes
 
 Los tests se configuran automáticamente para:
-- **Local**: Ejecuta en Chromium, Firefox y WebKit
-- **CI**: Ejecuta solo en Chromium (más rápido)
+- **Local**: Ejecuta en el navegador configurado (por defecto Electron)
+- **CI**: Ejecuta en modo headless
 
-El archivo `playwright.config.js` maneja esto automáticamente según la variable de entorno `CI`.
+El archivo `cypress.config.js` maneja esto automáticamente.
 
-## Servidores Automáticos
+## Servidores
 
-Playwright inicia automáticamente:
-- Backend en puerto 3001
-- Frontend en puerto 8080
+### Localmente
 
-Los servidores se detienen automáticamente después de los tests.
+Antes de ejecutar los tests localmente, asegúrate de tener los servidores corriendo:
+
+```bash
+# Terminal 1: Backend
+cd backend && PORT=3001 npm start
+
+# Terminal 2: Frontend
+cd frontend && python3 -m http.server 8080
+
+# Terminal 3: Ejecutar tests
+npm run test:e2e
+```
+
+### En CI/CD
+
+Los servidores se inician automáticamente en el workflow de GitHub Actions.
 
 ## Reportes
 
-- **HTML**: Generado en `playwright-report/`
-- **JUnit XML**: Generado en `test-results/e2e-results.xml` (para CI)
-- **Screenshots**: Capturados automáticamente en fallos
-- **Traces**: Disponibles en modo retry
+- **Videos**: Generados en `cypress/videos/` (solo en fallos por defecto)
+- **Screenshots**: Capturados automáticamente en fallos en `cypress/screenshots/`
+- **Logs**: Disponibles en la consola y en GitHub Actions
+
+## Estructura de Archivos
+
+```
+cypress/
+├── e2e/
+│   └── todo-app.cy.js      # Tests E2E principales
+├── support/
+│   ├── e2e.js              # Configuración de soporte
+│   └── commands.js         # Comandos personalizados
+└── fixtures/               # Datos de prueba (si se necesitan)
+```
 
 ## Troubleshooting
 
@@ -111,14 +134,33 @@ Verifica que:
 
 ### Tests fallan en CI pero pasan localmente
 
-- Verifica que las variables de entorno estén configuradas
+- Verifica que las variables de entorno estén configuradas (`E2E_BASE_URL`)
 - Revisa los logs del workflow en GitHub Actions
-- Descarga el reporte HTML desde los artifacts
+- Descarga los videos y screenshots desde los artifacts
+
+### Cypress no encuentra los elementos
+
+- Verifica que el `baseUrl` esté configurado correctamente en `cypress.config.js`
+- Asegúrate de que los servidores estén corriendo antes de ejecutar los tests
+- Usa `cy.wait()` si es necesario esperar a que elementos se carguen dinámicamente
 
 ## Mejores Prácticas
 
 1. **Isolación**: Cada test es independiente
 2. **Selectores**: Usar IDs y data-attributes cuando sea posible
-3. **Waits**: Playwright espera automáticamente, pero puedes agregar waits explícitos si es necesario
-4. **Assertions**: Usar las assertions de Playwright para mejor feedback
+3. **Waits**: Cypress espera automáticamente, pero puedes usar `cy.wait()` si es necesario
+4. **Assertions**: Usar las assertions de Cypress (`should()`) para mejor feedback
+5. **Comandos personalizados**: Crear comandos reutilizables en `cypress/support/commands.js`
 
+## Comandos Útiles
+
+```bash
+# Ejecutar un test específico
+npx cypress run --spec "cypress/e2e/todo-app.cy.js"
+
+# Ejecutar en un navegador específico
+npx cypress run --browser chrome
+
+# Ver videos de tests fallidos
+open cypress/videos
+```

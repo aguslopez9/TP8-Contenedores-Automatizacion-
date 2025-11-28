@@ -5,8 +5,10 @@ backend/node_modules/
 
 # Test results
 test-results/
-playwright-report/
-playwright/.cache/
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+.nyc_output/
 
 # Coverage
 coverage/

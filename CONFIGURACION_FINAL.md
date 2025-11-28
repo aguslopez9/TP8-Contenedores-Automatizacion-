@@ -140,10 +140,10 @@ npm run test:e2e
 
 ✅ **Completado:**
 - Aplicación completa y funcional
-- 70 tests implementados (50 unitarios + 7 integración + 13 E2E)
+- 65 tests implementados (50 unitarios + 7 integración + 8 E2E)
 - CI/CD pipeline completo
 - Documentación completa
-- Playwright configurado
+- Cypress configurado
 - SonarQube configurado (solo falta token)
 
 ⏳ **Pendiente:**

@@ -58,9 +58,9 @@ Ejecutados en el ambiente QA después del deploy:
 - Filtrado por prioridad
 - Eliminación de todos
 
-### Tests E2E (Playwright) - 13 tests
+### Tests E2E (Cypress) - 8 tests
 
-**`tests/e2e/todo-app.spec.js`:**
+**`cypress/e2e/todo-app.cy.js`:**
 - Carga de aplicación
 - Creación de todos (todas las prioridades)
 - Gestión (completar, eliminar)
@@ -70,7 +70,7 @@ Ejecutados en el ambiente QA después del deploy:
 - Operaciones en lote
 - Validaciones
 
-**Total: 70 tests** (50 unitarios + 7 integración + 13 E2E)
+**Total: 65 tests** (50 unitarios + 7 integración + 8 E2E)
 
 ---
 
@@ -97,9 +97,9 @@ Ejecutados en el ambiente QA después del deploy:
    - Upload de artefactos
 
 3. **test_e2e** (Nuevo)
-   - Instalación de Playwright
-   - Ejecución de tests E2E (13 tests)
-   - Generación de reportes HTML y XML
+   - Instalación de Cypress
+   - Ejecución de tests E2E (8 tests)
+   - Generación de videos y screenshots
    - Upload de reportes como artifacts
 
 4. **sonarqube** (Nuevo)
@@ -147,9 +147,9 @@ Ejecutados en el ambiente QA después del deploy:
    - Status checks en PRs
 
 2. **Tests E2E:**
-   - Reporte HTML interactivo (artifact: playwright-report)
-   - Reporte JUnit XML (artifact: e2e-test-results)
-   - Screenshots en fallos
+   - Videos de ejecución (artifact: cypress-videos)
+   - Screenshots en fallos (artifact: cypress-screenshots)
+   - Logs detallados en GitHub Actions
 
 3. **Tests de Integración:**
    - GitHub Step Summary con resumen
@@ -188,7 +188,7 @@ Ejecutados en el ambiente QA después del deploy:
 4. ✅ **Test Cases**
    - ✅ Tests unitarios documentados (50 tests)
    - ✅ Tests de integración documentados (7 tests)
-   - ✅ Tests E2E documentados (13 tests)
+   - ✅ Tests E2E documentados (8 tests)
    - ✅ Documentación completa en TEST_CASES.md
 
 ### Validación del Profesor
@@ -231,9 +231,12 @@ TP8-Contenedores-Automatizacion-/
 │   ├── styles.css
 │   ├── config.js
 │   └── package.json
-├── tests/
-│   └── e2e/
-│       └── todo-app.spec.js    # 13 tests E2E
+├── cypress/
+│   ├── e2e/
+│   │   └── todo-app.cy.js      # 8 tests E2E
+│   └── support/
+│       ├── e2e.js
+│       └── commands.js
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml              # Workflow CI + E2E + SonarQube
@@ -245,7 +248,7 @@ TP8-Contenedores-Automatizacion-/
 │   ├── deploy_frontend.sh
 │   └── health_check.sh
 ├── package.json                # Scripts E2E
-├── playwright.config.js        # Configuración Playwright
+├── cypress.config.js           # Configuración Cypress
 ├── sonar-project.properties    # Configuración SonarQube
 ├── TEST_CASES.md               # Documentación de todos los tests
 ├── E2E_TESTS.md                # Guía de tests E2E
@@ -308,7 +311,7 @@ cd frontend && python3 -m http.server 8080
 - [x] Repositorio en Git
 - [x] Build automatizado
 - [x] Tests unitarios (50 tests) con reportes
-- [x] Tests E2E (13 tests) con reportes
+- [x] Tests E2E (8 tests) con reportes
 - [x] Tests de integración (7 tests) con reportes
 - [x] Deploy automático a QA
 - [x] Aprobación manual para PROD

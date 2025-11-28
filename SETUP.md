@@ -35,10 +35,10 @@ cd ..
 npm install
 ```
 
-### 3. Instalar Playwright browsers
+### 3. (Opcional) Abrir Cypress Test Runner
 
 ```bash
-npx playwright install
+npm run test:e2e:open
 ```
 
 ## Ejecutar la Aplicación Localmente

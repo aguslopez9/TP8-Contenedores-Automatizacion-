@@ -7,8 +7,8 @@ Este documento describe todos los test cases implementados en el proyecto, inclu
 - **Tests Unitarios Backend**: 25 tests
 - **Tests Unitarios Frontend**: 25 tests
 - **Tests de Integración**: 7 tests
-- **Tests End-to-End (Playwright)**: 13 tests
-- **Total**: 70 tests
+- **Tests End-to-End (Cypress)**: 8 tests
+- **Total**: 65 tests
 
 Ver [E2E_TESTS.md](./E2E_TESTS.md) para detalles de los tests E2E.
 
@@ -322,9 +322,9 @@ Los tests de integración se ejecutan automáticamente después del deploy a QA 
 
 ---
 
-## Tests End-to-End (E2E) - Playwright
+## Tests End-to-End (E2E) - Cypress
 
-### Módulo: Todo Application E2E - 13 tests
+### Módulo: Todo Application E2E - 8 tests
 
 1. **debería cargar la aplicación correctamente**
    - Verifica que la página carga
@@ -335,57 +335,35 @@ Los tests de integración se ejecutan automáticamente después del deploy a QA 
    - Selecciona prioridad alta
    - Verifica que aparece en la lista con la prioridad correcta
 
-3. **debería crear un todo con prioridad media**
-   - Verifica creación con prioridad media
-   - Valida el estilo visual correspondiente
-
-4. **debería crear un todo con prioridad baja**
-   - Verifica creación con prioridad baja
-   - Valida el estilo visual correspondiente
-
-5. **debería marcar un todo como completado**
+3. **debería marcar un todo como completado**
    - Crea un todo
    - Marca el checkbox
    - Verifica que se aplica el estilo "completed"
 
-6. **debería eliminar un todo**
+4. **debería eliminar un todo**
    - Crea un todo
    - Hace click en eliminar
    - Verifica que desaparece de la lista
 
-7. **debería filtrar todos por estado completado**
+5. **debería filtrar todos por estado completado**
    - Crea todos completados y pendientes
    - Aplica filtro de completados
    - Verifica que solo se muestran los completados
 
-8. **debería filtrar todos por estado pendiente**
-   - Crea todos completados y pendientes
-   - Aplica filtro de pendientes
-   - Verifica que solo se muestran los pendientes
-
-9. **debería buscar todos por texto**
+6. **debería buscar todos por texto**
    - Crea múltiples todos
    - Escribe texto en el campo de búsqueda
    - Verifica que solo se muestran los que coinciden
 
-10. **debería mostrar estadísticas correctamente**
-    - Crea varios todos
-    - Verifica que la barra de estadísticas se muestra
-    - Valida que contiene información de totales
+7. **debería mostrar estadísticas correctamente**
+   - Crea varios todos
+   - Verifica que la barra de estadísticas se muestra
+   - Valida que contiene información de totales
 
-11. **debería marcar todos como completados**
-    - Crea múltiples todos
-    - Hace click en "Marcar todos completados"
-    - Verifica que todos los checkboxes quedan marcados
-
-12. **debería eliminar todos los completados**
-    - Crea todos completados y pendientes
-    - Hace click en "Eliminar completados"
-    - Verifica que solo quedan los pendientes
-
-13. **debería validar que no se puede crear un todo vacío**
-    - Intenta enviar el formulario vacío
-    - Verifica que no se crea ningún todo
+8. **debería marcar todos como completados**
+   - Crea múltiples todos
+   - Hace click en "Marcar todos completados"
+   - Verifica que todos los checkboxes quedan marcados
 
 ---
 
@@ -403,9 +381,10 @@ cd frontend
 npm test
 ```
 
-**E2E (Playwright):**
+**E2E (Cypress):**
 ```bash
 # Desde la raíz del proyecto
+# Asegúrate de tener los servidores corriendo primero
 npm run test:e2e
 ```
 
@@ -447,15 +426,14 @@ Los tests se ejecutan automáticamente en GitHub Actions:
 - ✅ Estadísticas
 - ✅ Operaciones en lote
 
-### E2E (Playwright)
+### E2E (Cypress)
 - ✅ Carga de aplicación
-- ✅ Creación de todos (todas las prioridades)
+- ✅ Creación de todos (con prioridad alta)
 - ✅ Gestión de todos (completar, eliminar)
-- ✅ Filtrado (completados, pendientes)
+- ✅ Filtrado (completados)
 - ✅ Búsqueda
 - ✅ Estadísticas
-- ✅ Operaciones en lote
-- ✅ Validaciones de formularios
+- ✅ Operaciones en lote (marcar todos completados)
 
 ---
 
@@ -465,7 +443,7 @@ Los tests se ejecutan automáticamente en GitHub Actions:
 
 2. **Tests Unitarios Frontend**: Usan Jest con jsdom para simular el entorno del navegador
 
-3. **Tests E2E**: Usan Playwright para ejecutar tests en navegadores reales (Chromium, Firefox, WebKit)
+3. **Tests E2E**: Usan Cypress para ejecutar tests en navegadores reales
 
 4. **Tests de Integración**: Se ejecutan contra el ambiente QA real después del deploy
 

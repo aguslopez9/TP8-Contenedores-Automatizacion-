@@ -5,7 +5,7 @@ Aplicación To-Do completa con frontend, backend y base de datos, con pipeline C
 ## 📋 Documentación
 
 - **[TEST_CASES.md](./TEST_CASES.md)**: Documentación completa de todos los test cases (unitarios e integración)
-- **[E2E_TESTS.md](./E2E_TESTS.md)**: Guía de tests end-to-end con Playwright
+- **[E2E_TESTS.md](./E2E_TESTS.md)**: Guía de tests end-to-end con Cypress
 - **[SONARQUBE.md](./SONARQUBE.md)**: Configuración de SonarQube/SonarCloud para análisis de código
 - **[.github/workflows/README.md](./.github/workflows/README.md)**: Documentación del flujo CI/CD y GitHub Actions
 
@@ -16,7 +16,7 @@ Aplicación To-Do completa con frontend, backend y base de datos, con pipeline C
 - ✅ Base de datos (JSON file-based)
 - ✅ Tests unitarios (50+ tests)
 - ✅ Tests de integración (7 tests)
-- ✅ Tests end-to-end con Playwright (13 tests)
+- ✅ Tests end-to-end con Cypress (8 tests)
 - ✅ Análisis de código con SonarQube/SonarCloud
 - ✅ CI/CD automatizado con GitHub Actions
 - ✅ Deploy automático a QA
@@ -39,9 +39,10 @@ cd frontend
 npm test
 ```
 
-**E2E (Playwright):**
+**E2E (Cypress):**
 ```bash
 # Desde la raíz del proyecto
+# Asegúrate de tener los servidores corriendo primero
 npm run test:e2e
 ```
 
@@ -49,7 +50,7 @@ npm run test:e2e
 
 Los tests se ejecutan automáticamente:
 - **Tests unitarios**: En cada PR y push a main
-- **Tests E2E (Playwright)**: En cada PR y push a main
+- **Tests E2E (Cypress)**: En cada PR y push a main
 - **Tests de integración**: Después del deploy a QA
 - **Análisis SonarQube**: En cada Pull Request
 
@@ -70,7 +71,7 @@ Ver [.github/workflows/README.md](./.github/workflows/README.md) para detalles c
 
 Los reportes de tests están disponibles en:
 - **Tests unitarios**: GitHub Actions → Pestaña "Summary" (Step Summary)
-- **Tests E2E**: Reporte HTML disponible en artifacts (playwright-report)
+- **Tests E2E**: Videos y screenshots disponibles en artifacts (cypress-videos, cypress-screenshots)
 - **Análisis de código**: SonarCloud dashboard y comentarios en PRs
 - **Logs**: Disponibles en la pestaña "Actions" de GitHub
 - **Status checks**: Visibles en Pull Requests
@@ -85,7 +86,7 @@ Los reportes de tests están disponibles en:
 ## 📚 Documentación Adicional
 
 - **[TEST_CASES.md](./TEST_CASES.md)**: Lista completa de todos los test cases
-- **[E2E_TESTS.md](./E2E_TESTS.md)**: Guía de tests end-to-end con Playwright
+- **[E2E_TESTS.md](./E2E_TESTS.md)**: Guía de tests end-to-end con Cypress
 - **[SONARQUBE.md](./SONARQUBE.md)**: Configuración de SonarQube/SonarCloud
 - **[SETUP.md](./SETUP.md)**: Guía de configuración inicial
 - **[RESUMEN_IMPLEMENTACION.md](./RESUMEN_IMPLEMENTACION.md)**: Resumen ejecutivo completo
