@@ -47,8 +47,9 @@ jobs:
         id: test
         # IMPORTANTE: continue-on-error: false asegura que si los tests fallan,
         # el pipeline se detiene inmediatamente y no continúa con el deploy
-        run: npm test 2>&1 | tee test-output.txt
-        continue-on-error: false
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test-output.txt
 
       - name: Display test results in summary
         if: always()
@@ -113,6 +114,7 @@ jobs:
         # IMPORTANTE: continue-on-error: false asegura que si los tests fallan,
         # el pipeline se detiene inmediatamente y no continúa con el deploy
         run: |
+          set -o pipefail
           export TEST_PORT=3001
           npm test 2>&1 | tee test-output.txt
         continue-on-error: false
