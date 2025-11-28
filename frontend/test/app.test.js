@@ -14,12 +14,20 @@ global.window = {
   },
 };
 
-// Load the app module
-// Since app.js uses global scope, we'll test the functions by importing and testing them
-// For now, let's create a testable version or test the behavior through DOM manipulation
+// Import app.js to enable coverage tracking
+// This ensures Jest can track coverage for all functions in app.js
+import "../app.js";
 
 describe("Frontend App Functions", () => {
   beforeEach(() => {
+    // Reset fetch mocks
+    fetch.mockClear();
+    fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ todos: [] }),
+      headers: new Headers({ "Content-Type": "application/json" }),
+    });
+    
     // Reset DOM
     document.body.innerHTML = `
       <main class="app">

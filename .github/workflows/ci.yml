@@ -324,11 +324,16 @@ jobs:
       - name: Generate backend coverage
         working-directory: backend
         run: |
-          PORT=3001 npm start &
-          sleep 3
+          # Start server with c8 coverage tracking
+          PORT=3001 c8 --reporter=lcov --reporter=text --reporter=html --include='server.js' --include='storage.js' node server.js &
+          SERVER_PID=$!
+          sleep 5
           export TEST_PORT=3001
-          c8 --reporter=lcov --reporter=text --reporter=html node --test test/*.test.js || echo "Coverage generation completed"
-          pkill -f "node server.js" || true
+          # Run tests (they will hit the server and trigger code execution)
+          node --test test/*.test.js || echo "Tests completed"
+          # Stop server
+          kill $SERVER_PID 2>/dev/null || pkill -f "node server.js" || true
+          sleep 2
           echo "✅ Backend coverage generated"
 
       - name: Generate frontend coverage

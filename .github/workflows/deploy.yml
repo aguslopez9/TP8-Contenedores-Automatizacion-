@@ -25,12 +25,103 @@ env:
   BACKEND_IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/tp8-release-backend
 
 jobs:
+  check_quality_gate:
+    name: Check SonarCloud Quality Gate
+    runs-on: ubuntu-latest
+    # Solo se ejecuta si CI completó exitosamente
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install jq (for JSON parsing)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Check SonarCloud Quality Gate
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: aguslopez9_TP8-Contenedores-Automatizacion-
+          SONAR_ORGANIZATION: aguslopez9
+        run: |
+          set -euo pipefail
+          echo "🔍 Verificando SonarCloud Quality Gate..."
+          echo "Project: ${SONAR_PROJECT_KEY}"
+          echo "Organization: ${SONAR_ORGANIZATION}"
+          echo ""
+          
+          # Obtener el estado del Quality Gate usando la API de SonarCloud
+          QUALITY_GATE_URL="https://sonarcloud.io/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}"
+          
+          echo "Consultando: ${QUALITY_GATE_URL}"
+          
+          RESPONSE=$(curl -s -u "${SONAR_TOKEN}:" "${QUALITY_GATE_URL}" || echo "ERROR")
+          
+          if [ "$RESPONSE" = "ERROR" ]; then
+            echo "❌ Error al consultar Quality Gate"
+            echo "Verifica que SONAR_TOKEN esté configurado correctamente"
+            exit 1
+          fi
+          
+          # Extraer el estado del Quality Gate
+          STATUS=$(echo "$RESPONSE" | jq -r '.projectStatus.status' 2>/dev/null || echo "$RESPONSE" | grep -o '"status":"[^"]*"' | cut -d'"' -f4 || echo "UNKNOWN")
+          
+          echo ""
+          echo "📊 Quality Gate Response:"
+          echo "$RESPONSE" | jq '.' 2>/dev/null || echo "$RESPONSE"
+          echo ""
+          
+          # Extraer condiciones que fallaron
+          FAILED_CONDITIONS=$(echo "$RESPONSE" | jq -r '.projectStatus.conditions[]? | select(.status == "ERROR") | "  ❌ \(.metricKey): \(.actualValue) (requiere: \(.errorThreshold))"' 2>/dev/null || echo "")
+          
+          if [ -n "$FAILED_CONDITIONS" ]; then
+            echo "❌ Condiciones que fallaron:"
+            echo "$FAILED_CONDITIONS"
+            echo ""
+          fi
+          
+          echo "📊 Quality Gate Status: ${STATUS}"
+          
+          if [ "$STATUS" = "OK" ]; then
+            echo ""
+            echo "✅ Quality Gate: PASSED"
+            echo "✅ Cobertura de código: >= 70%"
+            echo "✅ Sin issues críticos"
+            echo "✅ Listo para deploy"
+          elif [ "$STATUS" = "ERROR" ]; then
+            echo ""
+            echo "❌ Quality Gate: FAILED"
+            echo ""
+            echo "🚫 El deploy está BLOQUEADO porque:"
+            echo "  - Cobertura de código < 70%, O"
+            echo "  - Hay issues críticos sin resolver, O"
+            echo "  - Hay issues blocker sin resolver"
+            echo ""
+            echo "📋 Acciones requeridas:"
+            echo "  1. Revisa el reporte en SonarCloud:"
+            echo "     https://sonarcloud.io/project/overview?id=${SONAR_PROJECT_KEY}"
+            echo "  2. Corrige los problemas reportados"
+            echo "  3. Haz un nuevo push para re-evaluar"
+            exit 1
+          else
+            echo ""
+            echo "⚠️ Quality Gate Status: ${STATUS}"
+            echo "No se pudo determinar el estado. Verifica manualmente en SonarCloud."
+            echo "URL: https://sonarcloud.io/project/overview?id=${SONAR_PROJECT_KEY}"
+            # En caso de duda, bloquear el deploy por seguridad
+            exit 1
+          fi
+
   deploy_qa:
     name: Deploy QA
     # Solo se ejecuta si:
     # 1. El CI completó exitosamente (todos los tests pasaron)
     # 2. El commit está en la rama main (PR mergeado)
+    # 3. El Quality Gate pasó (nuevo requisito)
     # Esto asegura que solo código validado se despliega
+    needs: check_quality_gate
     if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     environment: qa
@@ -175,6 +266,8 @@ jobs:
           curl -f -X DELETE "${QA_BACKEND_URL%/}/todos/${TODO_ID}" || exit 1
           
           echo "✅ All integration tests passed"
+          echo ""
+          echo "✅ Quality Gate: Tests de integración - PASSED"
 
       - name: Display integration test results
         if: always()
@@ -200,13 +293,19 @@ jobs:
 
   deploy_prod:
     name: Deploy Prod
-    needs: deploy_qa
+    # Solo se ejecuta si:
+    # 1. CI completó exitosamente
+    # 2. Quality Gate pasó (needs: check_quality_gate)
+    # 3. Deploy a QA completó exitosamente (needs: deploy_qa)
+    # 4. Tests de integración pasaron (incluido en deploy_qa)
+    needs: [check_quality_gate, deploy_qa]
     runs-on: ubuntu-latest
     environment: prod
     if: >
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_branch == 'main' &&
-      needs.deploy_qa.result == 'success'
+      needs.deploy_qa.result == 'success' &&
+      needs.check_quality_gate.result == 'success'
     env:
       SOURCE_IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
 

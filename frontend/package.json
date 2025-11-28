@@ -25,7 +25,13 @@
     "coverageReporters": ["text", "lcov", "html"],
     "collectCoverageFrom": [
       "app.js",
-      "config.js"
+      "config.js",
+      "!**/node_modules/**",
+      "!**/test/**"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/test/"
     ]
   }
 }

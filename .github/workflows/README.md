@@ -32,9 +32,19 @@ Cuando un PR es aprobado y mergeado a `main`:
 
 3. **Si CI es exitoso** → Workflow Deploy se ejecuta automáticamente
 
-### 3. Deploy a QA
+### 3. Verificación de Quality Gates
 
-El workflow Deploy se ejecuta automáticamente después de CI exitoso:
+Antes del deploy, se verifica el Quality Gate de SonarCloud:
+
+1. **Check SonarCloud Quality Gate**:
+   - Verifica que la cobertura de código >= 70%
+   - Verifica que no hay issues críticos sin resolver
+   - Verifica que no hay issues blocker sin resolver
+   - **Si falla → El pipeline se detiene, no se despliega**
+
+### 4. Deploy a QA
+
+El workflow Deploy se ejecuta automáticamente después de CI exitoso y Quality Gate pasado:
 
 1. **Deploy QA**:
    - Descarga artefactos del CI
@@ -51,7 +61,7 @@ El workflow Deploy se ejecuta automáticamente después de CI exitoso:
 
 3. **Si todo pasa** → Se habilita el deploy a PROD (requiere aprobación manual)
 
-### 4. Deploy a PROD
+### 5. Deploy a PROD
 
 El deploy a PROD requiere **aprobación manual**:
 
@@ -79,6 +89,19 @@ El deploy a PROD requiere **aprobación manual**:
   - El pipeline se detiene
   - No se ejecuta el deploy
   - El PR no puede ser mergeado (si es PR)
+
+### Quality Gates (SonarCloud)
+
+- **Ubicación**: Workflow Deploy, job `check_quality_gate`
+- **Configuración**: Verifica API de SonarCloud
+- **Comportamiento**: Si el Quality Gate falla:
+  - El job falla inmediatamente
+  - El deploy a QA se bloquea
+  - El deploy a PROD se bloquea
+- **Criterios verificados**:
+  - ✅ Cobertura de código >= 70%
+  - ✅ Sin issues críticos nuevos
+  - ✅ Sin issues blocker nuevos
 
 ### Tests de Integración
 
@@ -143,21 +166,25 @@ CI ejecuta tests
             ↓
         Push a main
             ↓
-        CI ejecuta (build + tests + Docker)
+        CI ejecuta (build + tests + Docker + SonarCloud)
             ↓
         ¿CI exitoso?
             ├─ NO → Pipeline detenido
-            └─ SÍ → Deploy a QA
+            └─ SÍ → Check Quality Gate
                     ↓
-                Tests de Integración
-                    ↓
-                ¿Tests pasan?
-                    ├─ NO → Pipeline detenido
-                    └─ SÍ → Aprobación Manual PROD
+                ¿Quality Gate pasa?
+                    ├─ NO → Pipeline detenido (cobertura < 70% o issues críticos)
+                    └─ SÍ → Deploy a QA
                             ↓
-                        ¿Aprobado?
+                        Tests de Integración
+                            ↓
+                        ¿Tests pasan?
                             ├─ NO → Pipeline detenido
-                            └─ SÍ → Deploy a PROD
+                            └─ SÍ → Aprobación Manual PROD
+                                    ↓
+                                ¿Aprobado?
+                                    ├─ NO → Pipeline detenido
+                                    └─ SÍ → Deploy a PROD
 ```
 
 ## Troubleshooting
