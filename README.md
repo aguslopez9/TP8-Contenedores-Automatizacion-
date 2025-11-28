@@ -89,4 +89,4 @@ Los reportes de tests están disponibles en:
 - **[E2E_TESTS.md](./E2E_TESTS.md)**: Guía de tests end-to-end con Cypress
 - **[SONARQUBE.md](./SONARQUBE.md)**: Configuración de SonarQube/SonarCloud
 - **[SETUP.md](./SETUP.md)**: Guía de configuración inicial
-- **[RESUMEN_IMPLEMENTACION.md](./RESUMEN_IMPLEMENTACION.md)**: Resumen ejecutivo completo
+- **[RESUMEN_IMPLEMENTACION.md](./RESUMEN_IMPLEMENTACION.md)**: Resumen ejecutivo completo.
