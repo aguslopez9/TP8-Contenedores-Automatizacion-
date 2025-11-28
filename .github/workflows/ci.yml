@@ -324,60 +324,148 @@ jobs:
       - name: Generate backend coverage
         working-directory: backend
         run: |
-          # Start server with c8 coverage tracking
-          # IMPORTANTE: c8 necesita que el proceso termine normalmente para generar el reporte
-          PORT=3001 c8 --reporter=lcov --reporter=text --reporter=html --include='server.js' --include='storage.js' node server.js &
+          echo "🔍 Generando cobertura del backend..."
+          mkdir -p coverage
+          
+          # Estrategia: Usar NODE_V8_COVERAGE para generar cobertura nativa
+          # Luego convertir a LCOV con c8
+          echo "📊 Iniciando servidor con cobertura nativa de Node.js..."
+          PORT=3001 NODE_V8_COVERAGE=coverage node server.js &
           SERVER_PID=$!
           sleep 5
+          
+          echo "🧪 Ejecutando tests..."
           export TEST_PORT=3001
-          # Run tests (they will hit the server and trigger code execution)
           node --test test/*.test.js || echo "Tests completed"
-          # Stop server gracefully to allow c8 to write coverage report
-          # Enviar SIGTERM primero para que c8 pueda escribir el reporte
+          
+          echo "🛑 Deteniendo servidor..."
+          # Enviar SIGTERM para permitir que el servidor termine normalmente
           kill -TERM $SERVER_PID 2>/dev/null || true
           sleep 3
           # Si aún está corriendo, forzar terminación
           kill -9 $SERVER_PID 2>/dev/null || pkill -f "node server.js" || true
           sleep 2
+          
+          echo "📊 Convirtiendo cobertura a LCOV..."
+          # Convertir cobertura nativa de Node.js a LCOV usando c8
+          if [ -d coverage ]; then
+            c8 report --reporter=lcov --reporter=text --reporter=html --temp-dir=coverage --include='server.js' --include='storage.js' || echo "c8 report completed"
+          fi
+          
           # Verificar que el reporte se generó
           if [ -f coverage/lcov.info ]; then
             echo "✅ Backend coverage report generated"
             echo "📊 Coverage file size: $(wc -l < coverage/lcov.info) lines"
+            echo "📋 First 20 lines of coverage report:"
+            head -20 coverage/lcov.info || echo "Could not read coverage file"
           else
-            echo "⚠️ Warning: Coverage report not found, but continuing..."
+            echo "⚠️ Warning: Coverage report not found"
+            echo "📁 Contents of coverage directory:"
+            ls -la coverage/ || echo "Coverage directory not found"
+            echo "⚠️ Continuando sin cobertura del backend..."
           fi
 
       - name: Generate frontend coverage
         working-directory: frontend
-        run: npm run test:coverage
+        run: |
+          echo "🔍 Generando cobertura del frontend..."
+          npm run test:coverage
+          
+          # Verificar que el reporte se generó
+          if [ -f coverage/lcov.info ]; then
+            echo "✅ Frontend coverage report generated"
+            echo "📊 Coverage file size: $(wc -l < coverage/lcov.info) lines"
+            echo "📋 First 20 lines of coverage report:"
+            head -20 coverage/lcov.info || echo "Could not read coverage file"
+          else
+            echo "⚠️ Warning: Frontend coverage report not found"
+            echo "📁 Contents of coverage directory:"
+            ls -la coverage/ || echo "Coverage directory not found"
+          fi
 
       - name: Merge coverage reports
         run: |
+          echo "🔍 Combinando reportes de cobertura..."
           mkdir -p coverage
+          
+          # Crear archivo LCOV combinado
           echo "TN:" > coverage/lcov.info
+          
+          BACKEND_COVERAGE_EXISTS=false
+          FRONTEND_COVERAGE_EXISTS=false
           
           # Agregar cobertura del backend si existe
           if [ -f backend/coverage/lcov.info ]; then
-            echo "📊 Adding backend coverage..."
-            cat backend/coverage/lcov.info >> coverage/lcov.info
+            BACKEND_LINES=$(wc -l < backend/coverage/lcov.info)
+            if [ "$BACKEND_LINES" -gt 10 ]; then
+              echo "📊 Adding backend coverage (${BACKEND_LINES} lines)..."
+              cat backend/coverage/lcov.info >> coverage/lcov.info
+              BACKEND_COVERAGE_EXISTS=true
+            else
+              echo "⚠️ Backend coverage file exists but seems too small (${BACKEND_LINES} lines)"
+            fi
+          else
+            echo "⚠️ Backend coverage file not found at backend/coverage/lcov.info"
           fi
           
           # Agregar cobertura del frontend si existe
           if [ -f frontend/coverage/lcov.info ]; then
-            echo "📊 Adding frontend coverage..."
-            cat frontend/coverage/lcov.info >> coverage/lcov.info
+            FRONTEND_LINES=$(wc -l < frontend/coverage/lcov.info)
+            if [ "$FRONTEND_LINES" -gt 10 ]; then
+              echo "📊 Adding frontend coverage (${FRONTEND_LINES} lines)..."
+              cat frontend/coverage/lcov.info >> coverage/lcov.info
+              FRONTEND_COVERAGE_EXISTS=true
+            else
+              echo "⚠️ Frontend coverage file exists but seems too small (${FRONTEND_LINES} lines)"
+            fi
+          else
+            echo "⚠️ Frontend coverage file not found at frontend/coverage/lcov.info"
           fi
           
           # Verificar que el archivo no esté vacío
-          if [ -s coverage/lcov.info ]; then
-            echo "✅ Coverage report merged successfully"
+          FINAL_LINES=$(wc -l < coverage/lcov.info)
+          if [ "$FINAL_LINES" -gt 10 ]; then
+            echo "✅ Coverage report merged successfully (${FINAL_LINES} lines)"
             echo "📈 Coverage summary:"
-            grep -E "^SF:|^LF:|^LH:" coverage/lcov.info | head -10 || echo "Coverage data found"
+            echo "  - Backend: $([ "$BACKEND_COVERAGE_EXISTS" = true ] && echo "✅ Included" || echo "❌ Missing")"
+            echo "  - Frontend: $([ "$FRONTEND_COVERAGE_EXISTS" = true ] && echo "✅ Included" || echo "❌ Missing")"
+            echo ""
+            echo "📋 Sample coverage data:"
+            grep -E "^SF:|^LF:|^LH:" coverage/lcov.info | head -20 || echo "No coverage data found in expected format"
           else
-            echo "⚠️ Coverage report is empty, creating minimal report"
+            echo "❌ ERROR: Coverage report is empty or too small (${FINAL_LINES} lines)"
+            echo "📁 Checking for coverage files:"
+            find . -name "lcov.info" -type f 2>/dev/null | head -10 || echo "No lcov.info files found"
+            echo ""
+            echo "⚠️ This will result in very low coverage in SonarCloud"
+            echo "⚠️ Creating minimal report to avoid complete failure..."
             echo "TN:" > coverage/lcov.info
             echo "SF:backend/server.js" >> coverage/lcov.info
             echo "SF:frontend/app.js" >> coverage/lcov.info
+          fi
+
+      - name: Verify coverage report before SonarCloud scan
+        run: |
+          echo "🔍 Verificando reporte de cobertura antes de enviar a SonarCloud..."
+          if [ -f coverage/lcov.info ]; then
+            LINES=$(wc -l < coverage/lcov.info)
+            SIZE=$(du -h coverage/lcov.info | cut -f1)
+            echo "✅ Reporte encontrado: ${LINES} líneas, ${SIZE}"
+            
+            # Contar archivos fuente en el reporte
+            SOURCE_FILES=$(grep -c "^SF:" coverage/lcov.info || echo "0")
+            echo "📊 Archivos fuente en el reporte: ${SOURCE_FILES}"
+            
+            if [ "$SOURCE_FILES" -eq 0 ]; then
+              echo "⚠️ WARNING: No se encontraron archivos fuente en el reporte LCOV"
+              echo "📋 Primeras 30 líneas del reporte:"
+              head -30 coverage/lcov.info
+            else
+              echo "✅ Reporte parece válido con ${SOURCE_FILES} archivos fuente"
+            fi
+          else
+            echo "❌ ERROR: Reporte de cobertura no encontrado en coverage/lcov.info"
+            exit 1
           fi
 
       - name: SonarCloud Scan
