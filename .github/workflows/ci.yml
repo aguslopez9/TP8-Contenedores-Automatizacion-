@@ -327,41 +327,74 @@ jobs:
           echo "🔍 Generando cobertura del backend..."
           mkdir -p coverage
           
-          # Estrategia: Usar NODE_V8_COVERAGE para generar cobertura nativa
-          # Luego convertir a LCOV con c8
-          echo "📊 Iniciando servidor con cobertura nativa de Node.js..."
-          PORT=3001 NODE_V8_COVERAGE=coverage node server.js &
-          SERVER_PID=$!
-          sleep 5
+          # Estrategia mejorada: Usar c8 directamente para ejecutar el servidor
+          # c8 capturará la cobertura cuando el proceso termine
+          echo "📊 Iniciando servidor con c8 coverage tracking..."
           
+          # Ejecutar servidor con c8 en background
+          PORT=3001 c8 --reporter=lcov --reporter=text --reporter=html \
+            --include='server.js' --include='storage.js' \
+            --exclude='test/**' --exclude='node_modules/**' \
+            node server.js > /tmp/server.log 2>&1 &
+          SERVER_PID=$!
+          
+          echo "⏳ Esperando que el servidor inicie (PID: $SERVER_PID)..."
+          sleep 6
+          
+          # Verificar que el servidor está corriendo
+          if ! kill -0 $SERVER_PID 2>/dev/null; then
+            echo "❌ Error: El servidor no está corriendo"
+            echo "📋 Server log:"
+            cat /tmp/server.log || echo "No log available"
+            exit 1
+          fi
+          
+          echo "✅ Servidor iniciado correctamente"
           echo "🧪 Ejecutando tests..."
           export TEST_PORT=3001
           node --test test/*.test.js || echo "Tests completed"
           
-          echo "🛑 Deteniendo servidor..."
-          # Enviar SIGTERM para permitir que el servidor termine normalmente
+          echo "🛑 Deteniendo servidor de forma segura para que c8 escriba el reporte..."
+          # Enviar SIGTERM (permite que c8 escriba el reporte)
           kill -TERM $SERVER_PID 2>/dev/null || true
-          sleep 3
-          # Si aún está corriendo, forzar terminación
-          kill -9 $SERVER_PID 2>/dev/null || pkill -f "node server.js" || true
-          sleep 2
           
-          echo "📊 Convirtiendo cobertura a LCOV..."
-          # Convertir cobertura nativa de Node.js a LCOV usando c8
-          if [ -d coverage ]; then
-            c8 report --reporter=lcov --reporter=text --reporter=html --temp-dir=coverage --include='server.js' --include='storage.js' || echo "c8 report completed"
+          # Esperar a que el proceso termine (c8 necesita tiempo para escribir)
+          for i in {1..10}; do
+            if ! kill -0 $SERVER_PID 2>/dev/null; then
+              echo "✅ Servidor terminado correctamente"
+              break
+            fi
+            echo "⏳ Esperando que el servidor termine... ($i/10)"
+            sleep 1
+          done
+          
+          # Si aún está corriendo después de 10 segundos, forzar terminación
+          if kill -0 $SERVER_PID 2>/dev/null; then
+            echo "⚠️ Servidor aún corriendo, forzando terminación..."
+            kill -9 $SERVER_PID 2>/dev/null || true
+            sleep 2
           fi
           
           # Verificar que el reporte se generó
           if [ -f coverage/lcov.info ]; then
-            echo "✅ Backend coverage report generated"
-            echo "📊 Coverage file size: $(wc -l < coverage/lcov.info) lines"
-            echo "📋 First 20 lines of coverage report:"
-            head -20 coverage/lcov.info || echo "Could not read coverage file"
+            LINES=$(wc -l < coverage/lcov.info)
+            echo "✅ Backend coverage report generated (${LINES} lines)"
+            echo "📋 First 30 lines of coverage report:"
+            head -30 coverage/lcov.info || echo "Could not read coverage file"
+            
+            # Verificar que el reporte tiene contenido real
+            SOURCE_FILES=$(grep -c "^SF:" coverage/lcov.info || echo "0")
+            if [ "$SOURCE_FILES" -gt 0 ]; then
+              echo "✅ Reporte contiene ${SOURCE_FILES} archivos fuente"
+            else
+              echo "⚠️ WARNING: Reporte generado pero no contiene archivos fuente"
+            fi
           else
-            echo "⚠️ Warning: Coverage report not found"
+            echo "❌ ERROR: Coverage report not found at coverage/lcov.info"
             echo "📁 Contents of coverage directory:"
             ls -la coverage/ || echo "Coverage directory not found"
+            echo "📋 Server log:"
+            cat /tmp/server.log || echo "No log available"
             echo "⚠️ Continuando sin cobertura del backend..."
           fi
 
