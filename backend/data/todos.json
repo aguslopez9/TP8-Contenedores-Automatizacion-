@@ -1,14 +1,6 @@
 {
   "todos": [
     {
-      "id": 2,
-      "text": "comprar leche",
-      "completed": true,
-      "priority": "medium",
-      "createdAt": "2025-11-28T15:22:40.571Z",
-      "completedAt": "2025-11-28T15:24:13.484Z"
-    },
-    {
       "id": 3,
       "text": "Nueva tarea E2E",
       "completed": true,
@@ -95,6 +87,94 @@
       "priority": "medium",
       "createdAt": "2025-11-28T15:24:13.408Z",
       "completedAt": "2025-11-28T15:24:13.484Z"
+    },
+    {
+      "id": 14,
+      "text": "Nueva tarea E2E",
+      "completed": true,
+      "priority": "high",
+      "createdAt": "2025-11-28T16:09:49.187Z",
+      "completedAt": "2025-11-28T16:09:53.466Z"
+    },
+    {
+      "id": 15,
+      "text": "Tarea para completar",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T16:09:49.669Z",
+      "completedAt": "2025-11-28T16:09:53.466Z"
+    },
+    {
+      "id": 16,
+      "text": "Tarea para eliminar",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T16:09:50.158Z",
+      "completedAt": "2025-11-28T16:09:53.466Z"
+    },
+    {
+      "id": 17,
+      "text": "Tarea completada E2E",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T16:09:50.715Z",
+      "completedAt": "2025-11-28T16:09:53.466Z"
+    },
+    {
+      "id": 18,
+      "text": "Tarea pendiente E2E",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T16:09:51.069Z",
+      "completedAt": "2025-11-28T16:09:53.466Z"
+    },
+    {
+      "id": 19,
+      "text": "Tarea de búsqueda",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T16:09:51.600Z",
+      "completedAt": "2025-11-28T16:09:53.466Z"
+    },
+    {
+      "id": 20,
+      "text": "Otra tarea diferente",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T16:09:51.955Z",
+      "completedAt": "2025-11-28T16:09:53.466Z"
+    },
+    {
+      "id": 21,
+      "text": "Tarea 1",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T16:09:52.537Z",
+      "completedAt": "2025-11-28T16:09:53.466Z"
+    },
+    {
+      "id": 22,
+      "text": "Tarea 2",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T16:09:52.746Z",
+      "completedAt": "2025-11-28T16:09:53.466Z"
+    },
+    {
+      "id": 23,
+      "text": "Tarea 1 E2E",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T16:09:53.134Z",
+      "completedAt": "2025-11-28T16:09:53.466Z"
+    },
+    {
+      "id": 24,
+      "text": "Tarea 2 E2E",
+      "completed": true,
+      "priority": "medium",
+      "createdAt": "2025-11-28T16:09:53.391Z",
+      "completedAt": "2025-11-28T16:09:53.466Z"
     }
   ]
 }

@@ -1,13 +1,5 @@
 name: CI
 
-# Este workflow se ejecuta en:
-# 1. Push a main o TP8: Ejecuta build, tests y publica imagen Docker
-# 2. Pull Request a main: Ejecuta build y tests (sin publicar imagen)
-# 
-# IMPORTANTE: El deploy solo se ejecuta cuando:
-# - Un PR es aprobado y mergeado a main (trigger: push a main)
-# - Todos los tests unitarios pasan exitosamente
-# - El workflow Deploy se ejecuta automáticamente después de CI exitoso
 on:
   push:
     branches:
@@ -45,8 +37,6 @@ jobs:
 
       - name: Run unit tests
         id: test
-        # IMPORTANTE: continue-on-error: false asegura que si los tests fallan,
-        # el pipeline se detiene inmediatamente y no continúa con el deploy
         run: |
           set -o pipefail
           npm test 2>&1 | tee test-output.txt
@@ -54,24 +44,10 @@ jobs:
       - name: Display test results in summary
         if: always()
         run: |
-          echo "## 📊 Frontend Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Frontend Test Results" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           cat test-output.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          
-          # Extract test count from Jest output
-          TEST_COUNT=$(grep -oP "Tests:\s+\K[0-9]+" test-output.txt | head -1 || echo "0")
-          if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" != "0" ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "✅ **Total Tests**: $TEST_COUNT" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          # Check for failures
-          if grep -qi "failed\|FAIL" test-output.txt; then
-            echo "❌ **Some tests failed**" >> $GITHUB_STEP_SUMMARY
-          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -106,13 +82,10 @@ jobs:
         run: |
           PORT=3001 npm start &
           sleep 3
-          echo "Server started in background"
         continue-on-error: false
 
       - name: Run unit tests
         id: test
-        # IMPORTANTE: continue-on-error: false asegura que si los tests fallan,
-        # el pipeline se detiene inmediatamente y no continúa con el deploy
         run: |
           set -o pipefail
           export TEST_PORT=3001
@@ -127,24 +100,10 @@ jobs:
       - name: Display test results in summary
         if: always()
         run: |
-          echo "## 📊 Backend Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Backend Test Results" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           cat test-output.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          
-          # Extract test count
-          TEST_COUNT=$(grep -o "✔" test-output.txt | wc -l | tr -d ' ')
-          if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "✅ **Total Tests Passed**: $TEST_COUNT" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          # Check for failures
-          if grep -q "✖\|FAIL\|Error" test-output.txt; then
-            echo "❌ **Some tests failed**" >> $GITHUB_STEP_SUMMARY
-          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -232,7 +191,6 @@ jobs:
         run: |
           PORT=3001 npm start &
           sleep 5
-          echo "Backend server started"
         env:
           TEST_PORT: 3001
 
@@ -241,14 +199,11 @@ jobs:
         run: |
           python3 -m http.server 8080 &
           sleep 3
-          echo "Frontend server started"
 
       - name: Wait for servers to be ready
         run: |
-          echo "Waiting for servers..."
           timeout 30 bash -c 'until curl -f http://localhost:3001/health; do sleep 1; done'
           timeout 30 bash -c 'until curl -f http://localhost:8080; do sleep 1; done'
-          echo "Servers are ready"
 
       - name: Run E2E tests
         env:
@@ -275,17 +230,6 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-      - name: Display E2E test results
-        if: always()
-        run: |
-          echo "## 🎭 E2E Test Results (Cypress)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ -d cypress/videos ]; then
-            echo "✅ E2E tests completed" >> $GITHUB_STEP_SUMMARY
-            echo "View videos and screenshots in artifacts" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ E2E test results not found" >> $GITHUB_STEP_SUMMARY
-          fi
 
       - name: Stop servers
         if: always()
@@ -319,21 +263,13 @@ jobs:
         run: npm ci
 
       - name: Install coverage tools
-        run: |
-          npm install -g c8
-          echo "✅ Coverage tools installed"
+        run: npm install -g c8
 
       - name: Generate backend coverage
         working-directory: backend
         run: |
-          echo "🔍 Generando cobertura del backend..."
           mkdir -p coverage
           
-          # Estrategia: Usar c8 para rastrear el servidor Y los tests
-          # Iniciar servidor con c8 en background
-          echo "📊 Iniciando servidor con c8 coverage tracking..."
-          
-          # Usar c8 con temp-directory explícito para asegurar que los datos se guarden
           PORT=3001 c8 --reporter=lcov --reporter=text --reporter=html \
             --include='server.js' --include='storage.js' \
             --exclude='test/**' --exclude='node_modules/**' \
@@ -343,93 +279,59 @@ jobs:
             node server.js > /tmp/server.log 2>&1 &
           SERVER_PID=$!
           
-          echo "⏳ Esperando que el servidor inicie (PID: $SERVER_PID)..."
           sleep 6
           
-          # Verificar que el servidor está corriendo
           if ! kill -0 $SERVER_PID 2>/dev/null; then
-            echo "❌ Error: El servidor no está corriendo"
-            echo "📋 Server log:"
-            cat /tmp/server.log || echo "No log available"
+            cat /tmp/server.log || true
             exit 1
           fi
           
-          # Verificar que el servidor responde
           for i in {1..5}; do
             if curl -f http://localhost:3001/health > /dev/null 2>&1; then
-              echo "✅ Servidor respondiendo correctamente"
               break
             fi
             if [ $i -eq 5 ]; then
-              echo "❌ Error: El servidor no responde en /health"
               cat /tmp/server.log
               kill -9 $SERVER_PID 2>/dev/null || true
               exit 1
             fi
-            echo "⏳ Esperando respuesta del servidor... ($i/5)"
             sleep 2
           done
           
-          echo "🧪 Ejecutando tests con el servidor corriendo..."
           export TEST_PORT=3001
-          npm test || echo "Tests completed"
+          npm test || true
           
-          echo ""
-          echo "🛑 Deteniendo servidor de forma segura para que c8 escriba el reporte..."
-          
-          # Enviar SIGTERM para shutdown graceful (permite que c8 escriba el reporte)
           kill -TERM $SERVER_PID 2>/dev/null || true
           
-          # Esperar a que el proceso termine (c8 necesita tiempo para escribir)
           MAX_WAIT=20
           for i in $(seq 1 $MAX_WAIT); do
             if ! kill -0 $SERVER_PID 2>/dev/null; then
-              echo "✅ Servidor terminado correctamente (después de ${i}s)"
               break
             fi
             if [ $i -eq $MAX_WAIT ]; then
-              echo "⚠️ Servidor no terminó después de ${MAX_WAIT}s, forzando..."
               kill -9 $SERVER_PID 2>/dev/null || true
               break
             fi
-            echo "⏳ Esperando que el servidor termine... ($i/${MAX_WAIT})"
             sleep 1
           done
           
-          # Dar tiempo extra para que c8 escriba el reporte después de que termine
-          echo "⏳ Dando tiempo para que c8 escriba el reporte..."
           sleep 5
           
-          # Verificar si el proceso aún está corriendo
           if kill -0 $SERVER_PID 2>/dev/null; then
-            echo "⚠️ Forzando terminación final del servidor..."
             kill -9 $SERVER_PID 2>/dev/null || true
             sleep 3
           fi
           
-          # Siempre intentar regenerar el reporte desde los datos de V8
-          echo "📊 Verificando datos de cobertura V8..."
-          echo "📁 Directorio de trabajo: $(pwd)"
-          
           if [ -d coverage/tmp ]; then
             V8_FILE_COUNT=$(find coverage/tmp -name "*.json" 2>/dev/null | wc -l)
-            echo "📊 Archivos de cobertura V8 encontrados: ${V8_FILE_COUNT}"
             
             if [ "$V8_FILE_COUNT" -gt 0 ]; then
-              echo "📋 Archivos en coverage/tmp:"
-              ls -lh coverage/tmp/*.json 2>/dev/null | head -5
-              
-              # Usar c8 report para convertir los datos V8 a LCOV
-              echo ""
-              echo "🔄 Generando reporte LCOV desde datos V8..."
               c8 report --reporter=lcov --reporter=text \
                 --include='server.js' --include='storage.js' \
                 --exclude='test/**' --exclude='node_modules/**' \
                 --exclude='data/**' \
                 --temp-directory=coverage/tmp \
                 --reports-dir=coverage 2>&1 || {
-                echo "⚠️ c8 report falló, intentando con paths absolutos..."
-                # Intentar con paths absolutos
                 ABS_TMP_DIR="$(pwd)/coverage/tmp"
                 ABS_REPORTS_DIR="$(pwd)/coverage"
                 c8 report --reporter=lcov \
@@ -439,260 +341,104 @@ jobs:
               }
               
               sleep 3
-            else
-              echo "⚠️ No se encontraron archivos JSON de cobertura V8 en coverage/tmp"
-              echo "📁 Contenido de coverage/tmp:"
-              ls -la coverage/tmp/ 2>/dev/null || echo "  (no accesible)"
             fi
-          else
-            echo "⚠️ Directorio coverage/tmp no existe"
           fi
           
-          # Verificar si se generó el reporte
-          if [ -f coverage/lcov.info ]; then
-            FILE_SIZE=$(wc -c < coverage/lcov.info)
-            if [ "$FILE_SIZE" -gt 0 ]; then
-              echo "✅ Reporte LCOV encontrado (${FILE_SIZE} bytes)"
-            else
-              echo "⚠️ Reporte LCOV existe pero está vacío"
-            fi
-          else
-            echo "❌ Reporte LCOV no encontrado"
-          fi
-          
-          # Verificar que el reporte se generó
           if [ -f coverage/lcov.info ] && [ -s coverage/lcov.info ]; then
             LINES=$(wc -l < coverage/lcov.info)
             SOURCE_FILES=$(grep -c "^SF:" coverage/lcov.info || echo "0")
             
             if [ "$LINES" -gt 10 ] && [ "$SOURCE_FILES" -gt 0 ]; then
-              echo "✅ Backend coverage report generated successfully"
-              echo "📊 Reporte: ${LINES} líneas, ${SOURCE_FILES} archivos fuente"
-              echo ""
-              echo "📋 Archivos fuente en el reporte:"
-              grep "^SF:" coverage/lcov.info | sed 's|^SF:||' | while read file; do
-                basename "$file"
-              done | head -5
-              echo ""
-              echo "📈 Verificando que los paths sean correctos para SonarCloud..."
-              # Asegurar que los paths sean relativos al directorio raíz del proyecto
               sed -i.bak 's|^SF:backend/|SF:backend/|g; s|^SF:.*/backend/|SF:backend/|g' coverage/lcov.info || true
               rm -f coverage/lcov.info.bak
             else
-              echo "⚠️ WARNING: Reporte generado pero parece vacío o inválido"
-              echo "  - Líneas: ${LINES}"
-              echo "  - Archivos fuente: ${SOURCE_FILES}"
-              echo ""
-              echo "📋 Primeras líneas del reporte:"
-              head -50 coverage/lcov.info || echo "No se pudo leer el reporte"
-              echo ""
-              echo "❌ FALLANDO: El reporte de cobertura del backend es inválido"
+              echo "ERROR: Backend coverage report is invalid"
               exit 1
             fi
           else
-            echo "❌ ERROR: Coverage report not found or is empty at coverage/lcov.info"
-            echo "📁 Contents of coverage directory:"
-            ls -la coverage/ || echo "Coverage directory not found"
-            echo ""
-            echo "📋 Server log:"
-            cat /tmp/server.log || echo "No log available"
-            echo ""
-            echo "❌ FALLANDO: No se puede continuar sin cobertura del backend"
+            echo "ERROR: Coverage report not found or is empty"
             exit 1
           fi
 
       - name: Generate frontend coverage
         working-directory: frontend
-        run: |
-          echo "🔍 Generando cobertura del frontend..."
-          npm run test:coverage
-          
-          # Verificar que el reporte se generó
-          if [ -f coverage/lcov.info ]; then
-            echo "✅ Frontend coverage report generated"
-            echo "📊 Coverage file size: $(wc -l < coverage/lcov.info) lines"
-            echo "📋 First 20 lines of coverage report:"
-            head -20 coverage/lcov.info || echo "Could not read coverage file"
-          else
-            echo "⚠️ Warning: Frontend coverage report not found"
-            echo "📁 Contents of coverage directory:"
-            ls -la coverage/ || echo "Coverage directory not found"
-          fi
+        run: npm run test:coverage
 
       - name: Merge coverage reports
         run: |
-          echo "🔍 Combinando reportes de cobertura para SonarCloud..."
           mkdir -p coverage
-          
-          # Combinamos los reportes del backend y frontend en coverage/lcov.info
-          # SonarCloud leerá este archivo según sonar-project.properties
           
           BACKEND_COVERAGE_EXISTS=false
           FRONTEND_COVERAGE_EXISTS=false
           
-          # Normalizar paths en los reportes para que SonarCloud los entienda
-          echo "📝 Normalizando paths en los reportes de cobertura..."
-          
-          # Agregar cobertura del backend si existe
           if [ -f backend/coverage/lcov.info ] && [ -s backend/coverage/lcov.info ]; then
             BACKEND_LINES=$(wc -l < backend/coverage/lcov.info)
             BACKEND_SOURCE_FILES=$(grep -c "^SF:" backend/coverage/lcov.info || echo "0")
             
             if [ "$BACKEND_LINES" -gt 10 ] && [ "$BACKEND_SOURCE_FILES" -gt 0 ]; then
-              echo "📊 Adding backend coverage (${BACKEND_LINES} lines, ${BACKEND_SOURCE_FILES} source files)..."
-              
-              # Normalizar paths: asegurar que sean relativos al directorio raíz
-              # Crear una copia temporal del reporte del backend con paths normalizados
               sed 's|^SF:.*/backend/|SF:backend/|g; s|^SF:backend/|SF:backend/|g' backend/coverage/lcov.info > /tmp/backend-coverage-normalized.lcov
               
-              # Si el archivo final no existe, copiar el del backend
               if [ ! -f coverage/lcov.info ]; then
                 cp /tmp/backend-coverage-normalized.lcov coverage/lcov.info
               else
-                # Combinar: agregar el contenido del backend (sin el header TN: si ya existe)
                 grep -v "^TN:" /tmp/backend-coverage-normalized.lcov >> coverage/lcov.info || cat /tmp/backend-coverage-normalized.lcov >> coverage/lcov.info
               fi
               BACKEND_COVERAGE_EXISTS=true
-              echo "  ✅ Backend: ${BACKEND_SOURCE_FILES} archivos incluidos"
-            else
-              echo "⚠️ Backend coverage file exists but seems invalid (${BACKEND_LINES} lines, ${BACKEND_SOURCE_FILES} source files)"
-              echo "  📋 Primeras 20 líneas:"
-              head -20 backend/coverage/lcov.info || echo "  No se pudo leer"
             fi
-          else
-            echo "❌ Backend coverage file not found or is empty at backend/coverage/lcov.info"
           fi
           
-          # Agregar cobertura del frontend si existe
           if [ -f frontend/coverage/lcov.info ] && [ -s frontend/coverage/lcov.info ]; then
             FRONTEND_LINES=$(wc -l < frontend/coverage/lcov.info)
             FRONTEND_SOURCE_FILES=$(grep -c "^SF:" frontend/coverage/lcov.info || echo "0")
             
             if [ "$FRONTEND_LINES" -gt 10 ] && [ "$FRONTEND_SOURCE_FILES" -gt 0 ]; then
-              echo "📊 Adding frontend coverage (${FRONTEND_LINES} lines, ${FRONTEND_SOURCE_FILES} source files)..."
-              
-              # Normalizar paths: asegurar que sean relativos al directorio raíz
               sed 's|^SF:.*/frontend/|SF:frontend/|g; s|^SF:frontend/|SF:frontend/|g' frontend/coverage/lcov.info > /tmp/frontend-coverage-normalized.lcov
               
-              # Combinar: agregar el contenido del frontend (sin el header TN: si ya existe)
               if [ ! -f coverage/lcov.info ]; then
                 cp /tmp/frontend-coverage-normalized.lcov coverage/lcov.info
               else
                 grep -v "^TN:" /tmp/frontend-coverage-normalized.lcov >> coverage/lcov.info || cat /tmp/frontend-coverage-normalized.lcov >> coverage/lcov.info
               fi
               FRONTEND_COVERAGE_EXISTS=true
-              echo "  ✅ Frontend: ${FRONTEND_SOURCE_FILES} archivos incluidos"
-            else
-              echo "⚠️ Frontend coverage file exists but seems invalid (${FRONTEND_LINES} lines, ${FRONTEND_SOURCE_FILES} source files)"
             fi
-          else
-            echo "⚠️ Frontend coverage file not found at frontend/coverage/lcov.info"
           fi
           
-          # Verificar que el archivo final tenga contenido válido
           if [ -f coverage/lcov.info ]; then
             FINAL_LINES=$(wc -l < coverage/lcov.info)
             FINAL_SOURCE_FILES=$(grep -c "^SF:" coverage/lcov.info || echo "0")
             
             if [ "$FINAL_LINES" -gt 10 ] && [ "$FINAL_SOURCE_FILES" -gt 0 ]; then
-              echo "✅ Coverage report merged successfully"
-              echo "📈 Coverage summary:"
-              echo "  - Total lines: ${FINAL_LINES}"
-              echo "  - Source files: ${FINAL_SOURCE_FILES}"
-              echo "  - Backend: $([ "$BACKEND_COVERAGE_EXISTS" = true ] && echo "✅ Included" || echo "❌ Missing")"
-              echo "  - Frontend: $([ "$FRONTEND_COVERAGE_EXISTS" = true ] && echo "✅ Included" || echo "❌ Missing")"
-              echo ""
-              echo ""
-              echo "📋 Archivos fuente incluidos en el reporte combinado:"
-              grep "^SF:" coverage/lcov.info | sed 's|^SF:||' | sort | uniq | head -10 || echo "No source files found"
-              echo ""
-              echo "📊 Verificación de cobertura por archivo:"
-              echo "  Backend server.js: $([ "$BACKEND_COVERAGE_EXISTS" = true ] && (grep -q "SF:backend/server.js" coverage/lcov.info && echo "✅" || echo "⚠️ Path no encontrado") || echo "❌ No incluido")"
-              echo "  Backend storage.js: $([ "$BACKEND_COVERAGE_EXISTS" = true ] && (grep -q "SF:backend/storage.js" coverage/lcov.info && echo "✅" || echo "⚠️ Path no encontrado") || echo "❌ No incluido")"
-              echo "  Frontend app.js: $([ "$FRONTEND_COVERAGE_EXISTS" = true ] && (grep -q "SF:frontend/app.js" coverage/lcov.info && echo "✅" || echo "⚠️ Path no encontrado") || echo "❌ No incluido")"
-              echo "  Frontend config.js: $([ "$FRONTEND_COVERAGE_EXISTS" = true ] && (grep -q "SF:frontend/config.js" coverage/lcov.info && echo "✅" || echo "⚠️ Path no encontrado") || echo "❌ No incluido")"
-              echo ""
-              echo "📊 Coverage statistics (primeros 10 archivos):"
-              grep -E "^SF:|^LF:|^LH:" coverage/lcov.info | head -30 || echo "No coverage statistics found"
+              echo "Coverage report merged successfully"
             else
-              echo "❌ ERROR: Coverage report is invalid (${FINAL_LINES} lines, ${FINAL_SOURCE_FILES} source files)"
-              echo "📁 Checking for coverage files:"
-              find . -name "lcov.info" -type f -exec sh -c 'echo "  - {} ($(wc -l < {} | tr -d " ") lines, $(grep -c "^SF:" {} || echo 0) source files)"' \; 2>/dev/null || echo "No lcov.info files found"
+              echo "ERROR: Coverage report is invalid"
               exit 1
             fi
           else
-            echo "❌ ERROR: No coverage report was created"
-            echo "📁 Checking for coverage files:"
-            find . -name "lcov.info" -type f 2>/dev/null | head -10 || echo "No lcov.info files found"
+            echo "ERROR: No coverage report was created"
             exit 1
           fi
 
-      - name: Publish coverage results (siguiendo guía de referencia)
-        # Similar a PublishCodeCoverageResults@2 en Azure DevOps
-        # En GitHub Actions, publicamos el reporte como artifact y verificamos que esté correcto
+      - name: Publish coverage results
         run: |
-          echo "📤 Publicando resultados de code coverage (siguiendo guía)..."
           if [ -f coverage/lcov.info ]; then
-            LINES=$(wc -l < coverage/lcov.info)
-            SIZE=$(du -h coverage/lcov.info | cut -f1)
             SOURCE_FILES=$(grep -c "^SF:" coverage/lcov.info || echo "0")
             
-            echo "✅ Reporte de cobertura listo para SonarCloud:"
-            echo "  - Ubicación: coverage/lcov.info"
-            echo "  - Tamaño: ${SIZE} (${LINES} líneas)"
-            echo "  - Archivos fuente: ${SOURCE_FILES}"
-            
             if [ "$SOURCE_FILES" -eq 0 ]; then
-              echo "❌ ERROR: No se encontraron archivos fuente en el reporte LCOV"
-              echo "📋 Primeras 50 líneas del reporte:"
-              head -50 coverage/lcov.info
-              echo ""
-              echo "❌ El reporte no es válido. SonarCloud no podrá leer la cobertura."
+              echo "ERROR: No source files found in coverage report"
               exit 1
-            else
-              echo "✅ Reporte válido con ${SOURCE_FILES} archivos fuente"
-              echo ""
-              echo "📋 Lista de archivos fuente en el reporte:"
-              grep "^SF:" coverage/lcov.info | sed 's|^SF:||' | sort | uniq
-              echo ""
-              
-              # Verificar que ambos backend y frontend están incluidos
-              HAS_BACKEND_SERVER=$(grep -c "^SF:backend/server.js" coverage/lcov.info || echo "0")
-              HAS_BACKEND_STORAGE=$(grep -c "^SF:backend/storage.js" coverage/lcov.info || echo "0")
-              HAS_FRONTEND_APP=$(grep -c "^SF:frontend/app.js" coverage/lcov.info || echo "0")
-              
-              echo "📊 Verificación de inclusión:"
-              echo "  Backend server.js: $([ "$HAS_BACKEND_SERVER" -gt 0 ] && echo "✅ Incluido" || echo "❌ FALTANTE")"
-              echo "  Backend storage.js: $([ "$HAS_BACKEND_STORAGE" -gt 0 ] && echo "✅ Incluido" || echo "❌ FALTANTE")"
-              echo "  Frontend app.js: $([ "$HAS_FRONTEND_APP" -gt 0 ] && echo "✅ Incluido" || echo "❌ FALTANTE")"
-              echo ""
-              
-              if [ "$HAS_BACKEND_SERVER" -eq 0 ] || [ "$HAS_BACKEND_STORAGE" -eq 0 ]; then
-                echo "❌ ERROR: Faltan archivos del backend en el reporte de cobertura"
-                echo "📋 Todos los paths encontrados:"
-                grep "^SF:" coverage/lcov.info | sed 's|^SF:||' | sort | uniq
-                echo ""
-                echo "❌ SonarCloud no mostrará cobertura del backend. Revisa la generación de cobertura."
-                exit 1
-              fi
-              
-              if [ "$HAS_FRONTEND_APP" -eq 0 ]; then
-                echo "⚠️ WARNING: Frontend app.js no encontrado en el reporte"
-              fi
-              
-              echo "✅ El reporte está listo para ser analizado por SonarCloud"
+            fi
+            
+            HAS_BACKEND_SERVER=$(grep -c "^SF:backend/server.js" coverage/lcov.info || echo "0")
+            HAS_BACKEND_STORAGE=$(grep -c "^SF:backend/storage.js" coverage/lcov.info || echo "0")
+            
+            if [ "$HAS_BACKEND_SERVER" -eq 0 ] || [ "$HAS_BACKEND_STORAGE" -eq 0 ]; then
+              echo "ERROR: Missing backend files in coverage report"
+              exit 1
             fi
           else
-            echo "❌ ERROR: Reporte de cobertura no encontrado en coverage/lcov.info"
-            echo "📁 Buscando archivos lcov.info en el proyecto:"
-            find . -name "lcov.info" -type f 2>/dev/null || echo "No se encontraron archivos lcov.info"
+            echo "ERROR: Coverage report not found"
             exit 1
           fi
-          
-          # Publicar como artifact para referencia
-          echo "📦 Publicando reporte como artifact..."
-          mkdir -p coverage-artifact
-          cp coverage/lcov.info coverage-artifact/ || exit 1
 
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@v4
@@ -703,12 +449,9 @@ jobs:
           retention-days: 7
 
       - name: SonarCloud Scan
-        # Según la guía, SonarCloud debe leer el reporte de coverage/lcov.info
-        # que está configurado en sonar-project.properties
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectBaseDir: .
-          # SonarCloud leerá automáticamente coverage/lcov.info según sonar-project.properties
