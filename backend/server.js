@@ -236,3 +236,21 @@ store
     process.exit(1);
   });
 
+// Manejar señales para shutdown graceful (permite que c8 escriba el reporte)
+function gracefulShutdown(signal) {
+  console.log(`Received ${signal}, closing server gracefully...`);
+  server.close(() => {
+    console.log("Server closed");
+    process.exit(0);
+  });
+  
+  // Timeout para forzar cierre si no se cierra en 5 segundos
+  setTimeout(() => {
+    console.error("Forced shutdown after timeout");
+    process.exit(1);
+  }, 5000);
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+

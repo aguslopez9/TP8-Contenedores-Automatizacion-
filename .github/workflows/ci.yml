@@ -331,10 +331,13 @@ jobs:
           # Iniciar servidor con c8 en background
           echo "📊 Iniciando servidor con c8 coverage tracking..."
           
+          # Usar c8 con temp-directory explícito para asegurar que los datos se guarden
           PORT=3001 c8 --reporter=lcov --reporter=text --reporter=html \
             --include='server.js' --include='storage.js' \
             --exclude='test/**' --exclude='node_modules/**' \
             --exclude='data/**' \
+            --temp-directory=coverage/tmp \
+            --reports-dir=coverage \
             node server.js > /tmp/server.log 2>&1 &
           SERVER_PID=$!
           
@@ -371,46 +374,88 @@ jobs:
           
           echo ""
           echo "🛑 Deteniendo servidor de forma segura para que c8 escriba el reporte..."
-          # Enviar SIGTERM (permite que c8 escriba el reporte)
+          
+          # Enviar SIGTERM para shutdown graceful (permite que c8 escriba el reporte)
           kill -TERM $SERVER_PID 2>/dev/null || true
           
           # Esperar a que el proceso termine (c8 necesita tiempo para escribir)
-          for i in {1..15}; do
+          MAX_WAIT=20
+          for i in $(seq 1 $MAX_WAIT); do
             if ! kill -0 $SERVER_PID 2>/dev/null; then
-              echo "✅ Servidor terminado correctamente"
-              # Dar tiempo extra para que c8 escriba el reporte
-              sleep 3
+              echo "✅ Servidor terminado correctamente (después de ${i}s)"
               break
             fi
-            echo "⏳ Esperando que el servidor termine... ($i/15)"
+            if [ $i -eq $MAX_WAIT ]; then
+              echo "⚠️ Servidor no terminó después de ${MAX_WAIT}s, forzando..."
+              kill -9 $SERVER_PID 2>/dev/null || true
+              break
+            fi
+            echo "⏳ Esperando que el servidor termine... ($i/${MAX_WAIT})"
             sleep 1
           done
           
-          # Si aún está corriendo después de 15 segundos, forzar terminación
+          # Dar tiempo extra para que c8 escriba el reporte después de que termine
+          echo "⏳ Dando tiempo para que c8 escriba el reporte..."
+          sleep 5
+          
+          # Verificar si el proceso aún está corriendo
           if kill -0 $SERVER_PID 2>/dev/null; then
-            echo "⚠️ Servidor aún corriendo, forzando terminación..."
+            echo "⚠️ Forzando terminación final del servidor..."
             kill -9 $SERVER_PID 2>/dev/null || true
             sleep 3
           fi
           
-          # Esperar un poco más para asegurar que c8 escribió el reporte
-          sleep 2
+          # Siempre intentar regenerar el reporte desde los datos de V8
+          echo "📊 Verificando datos de cobertura V8..."
+          echo "📁 Directorio de trabajo: $(pwd)"
           
-          # Esperar un poco más y verificar que el reporte se generó
-          sleep 2
-          
-          # Si no existe lcov.info, intentar leerlo de los datos temporales de c8
-          if [ ! -f coverage/lcov.info ] || [ ! -s coverage/lcov.info ]; then
-            echo "⚠️ lcov.info no existe o está vacío, intentando regenerar con c8 report..."
-            if [ -d coverage/tmp ]; then
-              # Leer los datos de cobertura de V8 y convertirlos a LCOV
+          if [ -d coverage/tmp ]; then
+            V8_FILE_COUNT=$(find coverage/tmp -name "*.json" 2>/dev/null | wc -l)
+            echo "📊 Archivos de cobertura V8 encontrados: ${V8_FILE_COUNT}"
+            
+            if [ "$V8_FILE_COUNT" -gt 0 ]; then
+              echo "📋 Archivos en coverage/tmp:"
+              ls -lh coverage/tmp/*.json 2>/dev/null | head -5
+              
+              # Usar c8 report para convertir los datos V8 a LCOV
+              echo ""
+              echo "🔄 Generando reporte LCOV desde datos V8..."
               c8 report --reporter=lcov --reporter=text \
                 --include='server.js' --include='storage.js' \
                 --exclude='test/**' --exclude='node_modules/**' \
                 --exclude='data/**' \
                 --temp-directory=coverage/tmp \
-                || echo "c8 report falló, continuando..."
+                --reports-dir=coverage 2>&1 || {
+                echo "⚠️ c8 report falló, intentando con paths absolutos..."
+                # Intentar con paths absolutos
+                ABS_TMP_DIR="$(pwd)/coverage/tmp"
+                ABS_REPORTS_DIR="$(pwd)/coverage"
+                c8 report --reporter=lcov \
+                  --include='server.js' --include='storage.js' \
+                  --temp-directory="$ABS_TMP_DIR" \
+                  --reports-dir="$ABS_REPORTS_DIR" 2>&1 || true
+              }
+              
+              sleep 3
+            else
+              echo "⚠️ No se encontraron archivos JSON de cobertura V8 en coverage/tmp"
+              echo "📁 Contenido de coverage/tmp:"
+              ls -la coverage/tmp/ 2>/dev/null || echo "  (no accesible)"
             fi
+          else
+            echo "⚠️ Directorio coverage/tmp no existe"
+          fi
+          
+          # Verificar si se generó el reporte
+          if [ -f coverage/lcov.info ]; then
+            FILE_SIZE=$(wc -c < coverage/lcov.info)
+            if [ "$FILE_SIZE" -gt 0 ]; then
+              echo "✅ Reporte LCOV encontrado (${FILE_SIZE} bytes)"
+            else
+              echo "⚠️ Reporte LCOV existe pero está vacío"
+            fi
+          else
+            echo "❌ Reporte LCOV no encontrado"
           fi
           
           # Verificar que el reporte se generó
