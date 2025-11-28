@@ -88,11 +88,12 @@ async function renderStats() {
     state.stats = stats;
     const statsBar = document.querySelector("#stats-bar");
     if (statsBar) {
+      const byPriority = stats.byPriority || { high: 0, medium: 0, low: 0 };
       statsBar.innerHTML = `
-        <span>Total: ${stats.total}</span>
-        <span>Pendientes: ${stats.pending}</span>
-        <span>Completados: ${stats.completed}</span>
-        <span>Alta: ${stats.byPriority.high} | Media: ${stats.byPriority.medium} | Baja: ${stats.byPriority.low}</span>
+        <span>Total: ${stats.total || 0}</span>
+        <span>Pendientes: ${stats.pending || 0}</span>
+        <span>Completados: ${stats.completed || 0}</span>
+        <span>Alta: ${byPriority.high || 0} | Media: ${byPriority.medium || 0} | Baja: ${byPriority.low || 0}</span>
       `;
     }
   } catch (error) {

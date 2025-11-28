@@ -228,5 +228,163 @@ describe("Server API", () => {
     const response = await makeRequest(TEST_PORT, "PATCH", `/todos/${todoId}`, {});
     assert.strictEqual(response.status, 400);
   });
+
+  test("POST /todos should accept completed status in body", async () => {
+    const response = await makeRequest(TEST_PORT, "POST", "/todos", {
+      text: "Completed task",
+      completed: true,
+    });
+    assert.strictEqual(response.status, 201);
+    assert.strictEqual(response.body.todo.completed, true);
+    assert.ok(response.body.todo.completedAt);
+  });
+
+  test("POST /todos should normalize invalid priority", async () => {
+    const response = await makeRequest(TEST_PORT, "POST", "/todos", {
+      text: "Task",
+      priority: "invalid",
+    });
+    assert.strictEqual(response.status, 201);
+    assert.strictEqual(response.body.todo.priority, "medium");
+  });
+
+  test("GET /todos?completed=false should filter pending", async () => {
+    await makeRequest(TEST_PORT, "POST", "/todos", { text: "Done", completed: true });
+    await makeRequest(TEST_PORT, "POST", "/todos", { text: "Pending" });
+
+    const response = await makeRequest(TEST_PORT, "GET", "/todos?completed=false");
+    assert.strictEqual(response.status, 200);
+    assert.ok(response.body.todos.every((t) => t.completed === false));
+  });
+
+  test("GET /todos should combine multiple filters", async () => {
+    await makeRequest(TEST_PORT, "POST", "/todos", { text: "High task", priority: "high", completed: false });
+    await makeRequest(TEST_PORT, "POST", "/todos", { text: "High done", priority: "high", completed: true });
+    await makeRequest(TEST_PORT, "POST", "/todos", { text: "Low task", priority: "low", completed: false });
+
+    const response = await makeRequest(TEST_PORT, "GET", "/todos?priority=high&completed=false");
+    assert.strictEqual(response.status, 200);
+    assert.ok(response.body.todos.every((t) => t.priority === "high" && t.completed === false));
+  });
+
+  test("GET /todos should combine search with filters", async () => {
+    await makeRequest(TEST_PORT, "POST", "/todos", { text: "Buy milk", completed: false });
+    await makeRequest(TEST_PORT, "POST", "/todos", { text: "Buy bread", completed: true });
+    await makeRequest(TEST_PORT, "POST", "/todos", { text: "Clean house", completed: false });
+
+    const response = await makeRequest(TEST_PORT, "GET", "/todos?search=buy&completed=false");
+    assert.strictEqual(response.status, 200);
+    assert.ok(response.body.todos.every((t) => t.text.toLowerCase().includes("buy") && t.completed === false));
+  });
+
+  test("PATCH /todos/:id should handle text whitespace trimming", async () => {
+    const createRes = await makeRequest(TEST_PORT, "POST", "/todos", { text: "Original" });
+    const todoId = createRes.body.todo.id;
+
+    const updateRes = await makeRequest(TEST_PORT, "PATCH", `/todos/${todoId}`, {
+      text: "  Updated text  ",
+    });
+    assert.strictEqual(updateRes.status, 200);
+    assert.strictEqual(updateRes.body.todo.text, "Updated text");
+  });
+
+  test("PATCH /todos/:id should not update with empty text", async () => {
+    const createRes = await makeRequest(TEST_PORT, "POST", "/todos", { text: "Original" });
+    const todoId = createRes.body.todo.id;
+
+    const updateRes = await makeRequest(TEST_PORT, "PATCH", `/todos/${todoId}`, {
+      text: "   ",
+    });
+    // Empty text is ignored, not rejected - returns 200 with unchanged text
+    assert.strictEqual(updateRes.status, 200);
+    assert.strictEqual(updateRes.body.todo.text, "Original");
+  });
+
+  test("PATCH /todos/:id should normalize invalid priority", async () => {
+    const createRes = await makeRequest(TEST_PORT, "POST", "/todos", { text: "Task", priority: "low" });
+    const todoId = createRes.body.todo.id;
+
+    const updateRes = await makeRequest(TEST_PORT, "PATCH", `/todos/${todoId}`, {
+      priority: "invalid",
+    });
+    assert.strictEqual(updateRes.status, 200);
+    assert.strictEqual(updateRes.body.todo.priority, "low"); // Should remain unchanged
+  });
+
+  test("POST /todos/bulk/mark-completed should mark all as pending", async () => {
+    await makeRequest(TEST_PORT, "POST", "/todos", { text: "Task 1", completed: true });
+    await makeRequest(TEST_PORT, "POST", "/todos", { text: "Task 2", completed: true });
+
+    const response = await makeRequest(TEST_PORT, "POST", "/todos/bulk/mark-completed", {
+      completed: false,
+    });
+    assert.strictEqual(response.status, 200);
+    assert.ok(response.body.count >= 0);
+
+    const todosRes = await makeRequest(TEST_PORT, "GET", "/todos");
+    assert.ok(todosRes.body.todos.every((t) => t.completed === false));
+  });
+
+  test("POST /todos/bulk/mark-completed should handle empty body", async () => {
+    await makeRequest(TEST_PORT, "POST", "/todos", { text: "Task 1" });
+
+    const response = await makeRequest(TEST_PORT, "POST", "/todos/bulk/mark-completed", {
+      completed: undefined,
+    });
+    assert.strictEqual(response.status, 200);
+    assert.ok(response.body.count >= 0);
+  });
+
+  test("should handle request without body", async () => {
+    const response = await makeRequest(TEST_PORT, "GET", "/health");
+    assert.strictEqual(response.status, 200);
+  });
+
+  test("should handle invalid todo ID format", async () => {
+    const response = await makeRequest(TEST_PORT, "GET", "/todos/notanumber");
+    assert.strictEqual(response.status, 404);
+  });
+
+  test("should handle CORS on all endpoints", async () => {
+    const endpoints = ["/health", "/todos", "/todos/stats"];
+    for (const endpoint of endpoints) {
+      const response = await makeRequest(TEST_PORT, "GET", endpoint);
+      assert.ok(response.headers["access-control-allow-origin"]);
+    }
+  });
+
+  test("should handle OPTIONS on different paths", async () => {
+    const paths = ["/todos", "/todos/stats", "/todos/1"];
+    for (const path of paths) {
+      const response = await makeRequest(TEST_PORT, "OPTIONS", path);
+      assert.strictEqual(response.status, 204);
+    }
+  });
+
+  test("GET /todos/stats should return stats structure", async () => {
+    // Clear all todos first
+    const allTodos = await makeRequest(TEST_PORT, "GET", "/todos");
+    for (const todo of allTodos.body.todos) {
+      await makeRequest(TEST_PORT, "DELETE", `/todos/${todo.id}`);
+    }
+
+    const response = await makeRequest(TEST_PORT, "GET", "/todos/stats");
+    assert.strictEqual(response.status, 200);
+    assert.ok(typeof response.body.total === "number");
+    assert.ok(typeof response.body.completed === "number");
+    assert.ok(typeof response.body.pending === "number");
+    assert.ok(response.body.byPriority);
+    assert.ok(typeof response.body.byPriority.high === "number");
+    assert.ok(typeof response.body.byPriority.medium === "number");
+    assert.ok(typeof response.body.byPriority.low === "number");
+  });
+
+  test("should handle missing URL in request", async () => {
+    // This tests the badRequest handler for missing URL
+    // We can't easily test this through HTTP, but we can test edge cases
+    const response = await makeRequest(TEST_PORT, "GET", "");
+    // Should handle gracefully (either 404 or 400)
+    assert.ok([400, 404].includes(response.status));
+  });
 });
 
